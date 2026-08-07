@@ -339,7 +339,7 @@
         window.appointmentsDataCache = {};
         window.allBranchesString = "";
 
-        // --- AUTHENTICATION GATEKEEPER ---
+// --- AUTHENTICATION GATEKEEPER ---
         // This ensures the page content only loads if a valid user session exists
         onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -353,6 +353,13 @@
                 `;
                 return; // Stop execution
             }
+
+            // --- NEW: HIDE DELETE BUTTON IF NOT ADMIN ---
+            if (window.currentUser && window.currentUser.role !== 'admin') {
+                const bulkDeleteBtn = document.querySelector('button[onclick="window.executeBulkDelete()"]');
+                if(bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
+            }
+            // --------------------------------------------
 
             // User IS logged in. Proceed with bootstrapping the module.
             window.loadBranchesForApt();
