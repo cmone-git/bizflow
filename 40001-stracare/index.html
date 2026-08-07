@@ -114,31 +114,53 @@
 </head>
 <body>
 
-    <!-- Login Screen -->
-    <div id="login-container" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; align-items: center; justify-content: center; background: var(--bg); z-index: 9999; position: fixed; top: 0; left: 0; padding: 20px;">
-        <div style="background: var(--surface); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center;">
-            <h2 style="color: var(--text-main); margin-bottom: 24px; font-weight: 800; line-height: 1.3;">Welcome Back<br><span style="color: var(--primary); font-size: 18px;">Stra Care Administration</span></h2>
-            
-            <input type="email" id="loginEmail" placeholder="Email Address" style="width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background: #FAFAFA;">
-            
-            <div style="position: relative; margin-bottom: 16px;">
-                <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; padding-right: 40px; background: #FAFAFA;" onkeypress="if(event.key === 'Enter') window.handleLogin()">
-                <span class="material-symbols-rounded" onclick="window.togglePassword()" id="togglePassIcon" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; user-select: none;">visibility_off</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 24px; gap: 8px;">
-                <input type="checkbox" id="rememberMe" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary);">
-                <label for="rememberMe" style="font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none; font-weight: 500;">Remember me on this browser</label>
-            </div>
-
-            <button onclick="window.handleLogin()" id="loginBtn" style="width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: opacity 0.2s;">Access Dashboard</button>
-            <div id="login-error" style="color: var(--danger); margin-top: 16px; display: none; font-size: 13px;">Authentication Failed.</div>
+   <!-- Login / Reset Password Screen -->
+<div id="login-container" style="display: flex; flex-direction: column; height: 100vh; width: 100vw; align-items: center; justify-content: center; background: var(--bg); z-index: 9999; position: fixed; top: 0; left: 0; padding: 20px;">
+    
+    <!-- MAIN LOGIN FORM -->
+    <div id="login-form-box" style="background: var(--surface); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center;">
+        <h2 style="color: var(--text-main); margin-bottom: 24px; font-weight: 800; line-height: 1.3;">Welcome Back<br><span style="color: var(--primary); font-size: 18px;">Stra Care Administration</span></h2>
+        
+        <input type="email" id="loginEmail" placeholder="Email Address" style="width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background: #FAFAFA;">
+        
+        <div style="position: relative; margin-bottom: 8px;">
+            <input type="password" id="loginPassword" placeholder="Password" style="width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; padding-right: 40px; background: #FAFAFA;" onkeypress="if(event.key === 'Enter') window.handleLogin()">
+            <span class="material-symbols-rounded" onclick="window.togglePassword()" id="togglePassIcon" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; user-select: none;">visibility_off</span>
         </div>
 
-        <div style="margin-top: 40px; text-align: center;">
-            <img src="assets/name-cm.png" alt="CMB" style="max-width: 120px; height: auto; opacity: 0.7;">
+        <div style="text-align: right; margin-bottom: 16px;">
+            <span onclick="window.toggleResetView(true)" style="color: var(--primary); font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;">Forgot Password?</span>
         </div>
+
+        <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 24px; gap: 8px;">
+            <input type="checkbox" id="rememberMe" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary);">
+            <label for="rememberMe" style="font-size: 13px; color: var(--text-muted); cursor: pointer; user-select: none; font-weight: 500;">Remember me on this browser</label>
+        </div>
+
+        <button onclick="window.handleLogin()" id="loginBtn" style="width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: opacity 0.2s;">Access Dashboard</button>
+        <div id="login-error" style="color: var(--danger); margin-top: 16px; display: none; font-size: 13px;">Authentication Failed.</div>
     </div>
+
+    <!-- RESET PASSWORD FORM (Hidden by default) -->
+    <div id="reset-form-box" style="display: none; background: var(--surface); padding: 40px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center;">
+        <h2 style="color: var(--text-main); margin-bottom: 12px; font-weight: 800;">Reset Password</h2>
+        <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px; line-height: 1.5;">Enter your registered email address and we will send you a link to reset your password.</p>
+        
+        <input type="email" id="resetEmail" placeholder="Email Address" style="width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; outline: none; background: #FAFAFA;">
+        
+        <button onclick="window.handlePasswordReset()" id="resetBtn" style="width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; transition: opacity 0.2s; margin-bottom: 16px;">Send Reset Link</button>
+        
+        <div id="reset-msg" style="margin-bottom: 16px; font-size: 13px; font-weight: 600;"></div>
+
+        <span onclick="window.toggleResetView(false)" style="color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span class="material-symbols-rounded" style="font-size: 16px;">arrow_back</span> Back to Login
+        </span>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+        <img src="assets/name-cm.png" alt="CMB" style="max-width: 120px; height: auto; opacity: 0.7;">
+    </div>
+</div>
 
     <!-- APP WRAPPER -->
     <div id="app-container" style="display: none; height: 100vh; width: 100vw; overflow: hidden;">
@@ -279,140 +301,174 @@
         </div>
     </div> 
     
-    <script type="module">
-        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+<script type="module">
+    // 1. Import from your new config file instead of initializing inline
+    import { auth, db } from './firebase-config.js';
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAcO1L2Za7dzILxylmMkRTSx0FBVu_EEoM",
-            authDomain: "cmf001stra.firebaseapp.com",
-            projectId: "cmf001stra",
-            storageBucket: "cmf001stra.firebasestorage.app",
-            messagingSenderId: "763958641347",
-            appId: "1:763958641347:web:316876bc2340b26bd21876",
-            measurementId: "G-770FBR88LJ"
-        };
+    window.currentUser = null;
 
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+    // UI Toggle: Switch between Login and Reset Password views
+    window.toggleResetView = function(showReset) {
+        document.getElementById('login-form-box').style.display = showReset ? 'none' : 'block';
+        document.getElementById('reset-form-box').style.display = showReset ? 'block' : 'none';
+        document.getElementById('reset-msg').innerText = ''; // Clear previous messages
+        
+        // Auto-fill email in reset box if they already started typing it in login
+        if (showReset) {
+            document.getElementById('resetEmail').value = document.getElementById('loginEmail').value;
+        }
+    };
 
-        // Role Mapping Object Based on Explicit Emails
-        const userRolesMap = {
-            "shanicm@gmail.com": { role: "admin", branch: "ALL" },
-            "shain609@gmail.com": { role: "admin", branch: "ALL" },
-            "stracp2@gmail.com": { role: "user1", branchId: "B1" },
-            "stracare1@gmail.com": { role: "user2", branchId: "B2" },
-            "stracare555@gmail.com": { role: "user3", branchId: "B3" },
-            "stracarephysiotherapy@gmail.com": { role: "user4", branchId: "B4" },
-            "theracare555physio@gmail.com": { role: "user5", branchId: "B5" },
-            "stracp1@gmail.com": { role: "user6", branchId: "B6" },
-        };
+    // Toggle Password Visibility
+    window.togglePassword = function() {
+        const passInput = document.getElementById('loginPassword');
+        const passIcon = document.getElementById('togglePassIcon');
+        if (passInput.type === 'password') {
+            passInput.type = 'text';
+            passIcon.innerText = 'visibility';
+        } else {
+            passInput.type = 'password';
+            passIcon.innerText = 'visibility_off';
+        }
+    };
 
-        window.currentUser = null;
+    // Handle Password Reset
+    window.handlePasswordReset = async function() {
+        const email = document.getElementById('resetEmail').value.trim();
+        const msgDiv = document.getElementById('reset-msg');
+        const resetBtn = document.getElementById('resetBtn');
 
-        // Toggle Password Visibility
-        window.togglePassword = function() {
-            const passInput = document.getElementById('loginPassword');
-            const passIcon = document.getElementById('togglePassIcon');
-            if (passInput.type === 'password') {
-                passInput.type = 'text';
-                passIcon.innerText = 'visibility';
-            } else {
-                passInput.type = 'password';
-                passIcon.innerText = 'visibility_off';
-            }
-        };
+        if (!email) {
+            msgDiv.innerText = "Please enter your email address.";
+            msgDiv.style.color = "var(--danger)";
+            return;
+        }
 
-        // Handle Login using Firebase Auth
-        window.handleLogin = async function() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            const rememberMe = document.getElementById('rememberMe').checked;
-            const errDiv = document.getElementById('login-error');
-            const loginBtn = document.getElementById('loginBtn');
+        resetBtn.innerText = "Sending...";
+        resetBtn.disabled = true;
 
-            if (!email || !password) {
-                errDiv.innerText = "Please enter both email and password.";
-                errDiv.style.display = 'block';
-                return;
-            }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            msgDiv.innerText = "Reset link sent! Please check your inbox.";
+            msgDiv.style.color = "var(--success)";
+        } catch (error) {
+            console.error("Password reset error:", error);
+            msgDiv.innerText = "Error: Could not send reset link. Verify email.";
+            msgDiv.style.color = "var(--danger)";
+        } finally {
+            resetBtn.innerText = "Send Reset Link";
+            resetBtn.disabled = false;
+        }
+    };
 
-            loginBtn.innerText = "Authenticating...";
-            loginBtn.disabled = true;
-            errDiv.style.display = 'none';
+    // Handle Login using Firebase Auth
+    window.handleLogin = async function() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        const rememberMe = document.getElementById('rememberMe').checked;
+        const errDiv = document.getElementById('login-error');
+        const loginBtn = document.getElementById('loginBtn');
 
+        if (!email || !password) {
+            errDiv.innerText = "Please enter both email and password.";
+            errDiv.style.display = 'block';
+            return;
+        }
+
+        loginBtn.innerText = "Authenticating...";
+        loginBtn.disabled = true;
+        errDiv.style.display = 'none';
+
+        try {
+            const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistenceType);
+            await signInWithEmailAndPassword(auth, email, password);
+            // The onAuthStateChanged listener handles the rest
+        } catch (error) {
+            errDiv.innerText = "Invalid credentials or user not found.";
+            errDiv.style.display = 'block';
+            loginBtn.innerText = "Access Dashboard";
+            loginBtn.disabled = false;
+        }
+    };
+
+    // Handle Logout
+    window.handleLogout = async function() {
+        try {
+            await signOut(auth);
+            window.currentUser = null;
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('loginPassword').value = ''; 
+        } catch (error) {
+            console.error("Error signing out: ", error);
+        }
+    };
+
+    // Global Auth State Observer (The Gatekeeper)
+    onAuthStateChanged(auth, async (user) => {
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+            loginBtn.innerText = "Access Dashboard";
+            loginBtn.disabled = false;
+        }
+
+        if (user) {
             try {
-                // Set persistence based on "Remember Me" checkbox
-                const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-                await setPersistence(auth, persistenceType);
-
-                // Sign in
-                await signInWithEmailAndPassword(auth, email, password);
-                // The onAuthStateChanged listener will handle the UI transition
-
-            } catch (error) {
-                errDiv.innerText = "Invalid credentials or user not found.";
-                errDiv.style.display = 'block';
-                loginBtn.innerText = "Access Dashboard";
-                loginBtn.disabled = false;
-            }
-        };
-
-        // Handle Logout
-        window.handleLogout = async function() {
-            try {
-                await signOut(auth);
-                window.currentUser = null;
-                document.getElementById('app-container').style.display = 'none';
-                document.getElementById('login-container').style.display = 'flex';
-                document.getElementById('loginPassword').value = ''; 
-            } catch (error) {
-                console.error("Error signing out: ", error);
-            }
-        };
-
-        // Global Auth State Observer (The Gatekeeper)
-        onAuthStateChanged(auth, (user) => {
-            const loginBtn = document.getElementById('loginBtn');
-            if (loginBtn) {
-                loginBtn.innerText = "Access Dashboard";
-                loginBtn.disabled = false;
-            }
-
-            if (user) {
-                // User is signed in. Extract Role from map
                 const emailLower = user.email.toLowerCase();
-                const mappedProfile = userRolesMap[emailLower] || { role: "user", branch: "Unknown" };
-
-                window.currentUser = {
-                    email: user.email,
-                    role: mappedProfile.role,
-                    branch: mappedProfile.branch
-                };
-
-                // Show App Wrapper
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
                 
-                const branchTextElement = document.getElementById('dash-branch-text');
-                if (window.currentUser.role === 'admin') {
-                    branchTextElement.innerText = "Master Access (All Branches)";
-                    branchTextElement.style.color = "var(--primary)";
+                // Fetch Role dynamically from Firestore 'users' collection
+                const userDocRef = doc(db, "users", emailLower);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    window.currentUser = {
+                        email: emailLower,
+                        role: userData.role || "user",
+                        branch: userData.branch || "Unknown"
+                    };
+
+                    // Show App Wrapper
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('app-container').style.display = 'flex';
+                    
+                    const branchTextElement = document.getElementById('dash-branch-text');
+                    if (window.currentUser.role === 'admin') {
+                        branchTextElement.innerText = "Master Access (All Branches)";
+                        branchTextElement.style.color = "var(--primary)";
+                    } else {
+                        branchTextElement.innerText = window.currentUser.branch;
+                    }
+                    
+                    if(window.fetchDashboardData) window.fetchDashboardData();
+
                 } else {
-                    branchTextElement.innerText = window.currentUser.branch;
+                    // User exists in Auth, but no role is defined in Firestore DB
+                    throw new Error("No database access found. Contact Administrator.");
                 }
-                
-                if(window.fetchDashboardData) window.fetchDashboardData();
 
-            } else {
-                // User is signed out.
-                window.currentUser = null;
-                document.getElementById('app-container').style.display = 'none';
-                document.getElementById('login-container').style.display = 'flex';
+            } catch (error) {
+                console.error(error);
+                await signOut(auth); // Log them back out if they have no role
+                const errDiv = document.getElementById('login-error');
+                errDiv.innerText = error.message;
+                errDiv.style.display = 'block';
             }
-        });
+
+        } else {
+            // User is signed out.
+            window.currentUser = null;
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'flex';
+        }
+    });
+
+    // ... [Keep the rest of your original script variables and functions here: window.allApts, window.formatIndianDate, window.renderChart, window.fetchDashboardData, etc.] ...
+
+</script>
 
 
         // Global UI State
