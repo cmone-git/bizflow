@@ -326,22 +326,11 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, orderBy, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAcO1L2Za7dzILxylmMkRTSx0FBVu_EEoM",
-            authDomain: "cmf001stra.firebaseapp.com",
-            projectId: "cmf001stra",
-            storageBucket: "cmf001stra.firebasestorage.app",
-            messagingSenderId: "763958641347",
-            appId: "1:763958641347:web:316876bc2340b26bd21876",
-            measurementId: "G-770FBR88LJ"
-        };
-
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const db = getFirestore(app);
+<script type="module">
+        // 1. Import from your central config instead of re-initializing Firebase
+        import { auth, db } from './firebase-config.js'; 
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // Make deleteDoc globally accessible for the bulk delete function
         window.deleteDoc = deleteDoc;
@@ -349,6 +338,30 @@
 
         window.appointmentsDataCache = {};
         window.allBranchesString = "";
+
+        // --- AUTHENTICATION GATEKEEPER ---
+        // This ensures the page content only loads if a valid user session exists
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // User is NOT logged in. Destroy the module content and show a warning.
+                document.getElementById('appointment-module').innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; background: #FEF2F2; border-radius: 16px; border: 1px solid #FCA5A5; margin-top: 20px;">
+                        <span class="material-symbols-rounded" style="font-size: 48px; color: #EF4444; margin-bottom: 12px;">gpp_bad</span>
+                        <h2 style="color: #991B1B; margin-bottom: 8px;">Access Denied</h2>
+                        <p style="color: #7F1D1D; font-size: 14px;">You must be logged into the administrative dashboard to view this module.</p>
+                    </div>
+                `;
+                return; // Stop execution
+            }
+
+            // User IS logged in. Proceed with bootstrapping the module.
+            window.loadBranchesForApt();
+            window.loadTherapistsForApt();
+            setMinBookingDate();
+            window.loadAppointments().then(() => {
+                window.setFilterToday();
+            });
+        });
 
         window.formatIndianDate = function(dateStr) {
             if(!dateStr) return '';
@@ -463,10 +476,6 @@
             }
         };
 
-        window.loadBranchesForApt();
-        window.loadTherapistsForApt();
-        setMinBookingDate();
-
         // --- 1. FORM UI LOGIC ---
         window.toggleReschedule = function(select) {
             const container = document.getElementById('reschedule-container');
@@ -504,7 +513,6 @@
         function isPastDateTime(dateStr, timeStr) {
             if(!dateStr) return false;
             
-            // Build target date properly using local timezone
             const targetParts = dateStr.split('-');
             const year = parseInt(targetParts[0]);
             const month = parseInt(targetParts[1]) - 1;
@@ -531,7 +539,6 @@
             if (mobile.length !== 10) return alert("Enter 10-digit mobile number first.");
             btn.innerText = "...";
             try {
-                // Fetch Patient Data
                 const pSnap = await getDocs(query(collection(db, "patients"), where("mobile", "==", mobile)));
                 if (!pSnap.empty) {
                     const pData = pSnap.docs[0].data();
@@ -550,7 +557,6 @@
                     alert("No patient found. Details will be auto-registered upon saving.");
                 }
 
-                // Calculate OP Balance from previous unpaid appointments
                 let opBalance = 0;
                 const currentDocId = document.getElementById('aptDocId').value;
                 const aptsSnap = await getDocs(query(collection(db, "appointments"), where("mobile", "==", mobile)));
@@ -595,14 +601,12 @@
                     aptsList.push({ id: docSnap.id, data: docSnap.data() });
                 });
 
-                // MAIN SORT: By Date (Descending), then Branch
                 aptsList.sort((a, b) => {
                     const dateCompare = new Date(b.data.date || 0) - new Date(a.data.date || 0);
                     if (dateCompare !== 0) return dateCompare;
                     return (a.data.branch || '').localeCompare(b.data.branch || '');
                 });
 
-                // GROUP BY THERAPIST
                 const groupedApts = {};
                 aptsList.forEach(item => {
                     const th = item.data.therapist || 'Unassigned Therapist';
@@ -613,7 +617,6 @@
                 const sortedTherapists = Object.keys(groupedApts).sort();
 
                 sortedTherapists.forEach(therapist => {
-                    // Create Bold Therapist Header Row
                     const thRow = document.createElement('tr');
                     thRow.className = "therapist-group-header";
                     thRow.innerHTML = `
@@ -626,7 +629,6 @@
                     `;
                     tableBody.appendChild(thRow);
 
-                    // Insert Appointments under Therapist
                     groupedApts[therapist].forEach((item) => {
                         const data = item.data;
                         const docId = item.id; 
@@ -694,7 +696,6 @@
             }
         };
 
-        // Initialize today filter on load
         window.setFilterToday = function() {
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -706,10 +707,6 @@
             document.getElementById("filterDateTo").value = todayStr;
             window.filterTable();
         }
-
-        window.loadAppointments().then(() => {
-            window.setFilterToday();
-        });
 
         // --- NOTES MODAL LOGIC ---
         window.viewNotes = function(docId) {
@@ -817,7 +814,6 @@
             const data = window.appointmentsDataCache[docId];
             if(!data) return;
             
-            // Remove the min date restriction when editing an old appointment so dates can be loaded properly
             document.getElementById('aptDate').removeAttribute('min');
 
             document.getElementById('aptDocId').value = docId; 
@@ -836,7 +832,6 @@
             document.getElementById('aptAdvance').value = data.advance || '';
             document.getElementById('aptNotes').value = data.notes || '';
 
-            // Recalculate OP Balance dynamically for edit
             let opBalance = 0;
             const aptsSnap = await getDocs(query(collection(db, "appointments"), where("mobile", "==", data.mobile)));
             aptsSnap.forEach(d => {
@@ -855,7 +850,6 @@
 
         // --- 6. BULK ACTIONS (COPY / DELETE) ---
         window.toggleAllCheckboxes = function(masterCheckbox) {
-            // Only toggle visible checkboxes to respect current filter
             const checkboxes = document.querySelectorAll('.apt-row:not([style*="display: none"]) .apt-checkbox');
             checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
         }
@@ -920,7 +914,6 @@
             const checkboxes = document.querySelectorAll('.apt-checkbox:checked');
             if (checkboxes.length === 0) return alert("Please select appointments to delete.");
 
-            // Verify they are all pending or cancelled
             for(let cb of checkboxes) {
                 const data = window.appointmentsDataCache[cb.value];
                 if (data && data.status !== 'Pending' && data.status !== 'Cancelled') {
@@ -1025,7 +1018,6 @@
                     const genId = "P" + Math.floor(Math.random() * 90000 + 10000);
                     await addDoc(collection(db, "patients"), { patientId: genId, mobile: mobile, name: name, age: age, category: category, location: location, notes: patientNotes, branch: branch, createdAt: new Date() });
                 } else {
-                    // Update patient category if it changed
                     const pDoc = pSnap.docs[0];
                     if (pDoc.data().category !== category) {
                         await updateDoc(doc(db, "patients", pDoc.id), { category: category });
