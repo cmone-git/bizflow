@@ -148,24 +148,31 @@
     </div>
 
     <script type="module">
-        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // 1. Import from your central config instead of re-initializing Firebase
+        import { auth, db } from './firebase-config.js'; 
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // CMF001STRA Config
-        const firebaseConfig = {
-            apiKey: "AIzaSyAcO1L2Za7dzILxylmMkRTSx0FBVu_EEoM",
-            authDomain: "cmf001stra.firebaseapp.com",
-            projectId: "cmf001stra",
-            storageBucket: "cmf001stra.firebasestorage.app",
-            messagingSenderId: "763958641347",
-            appId: "1:763958641347:web:316876bc2340b26bd21876",
-            measurementId: "G-770FBR88LJ"
-        };
-
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const db = getFirestore(app);
-        
         window.staffDataCache = {};
+
+        // --- AUTHENTICATION GATEKEEPER ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // User is NOT logged in. Destroy the module content and show a warning.
+                document.getElementById('staff-module').innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; background: #FEF2F2; border-radius: 16px; border: 1px solid #FCA5A5; margin-top: 20px;">
+                        <span class="material-symbols-rounded" style="font-size: 48px; color: #EF4444; margin-bottom: 12px;">gpp_bad</span>
+                        <h2 style="color: #991B1B; margin-bottom: 8px;">Access Denied</h2>
+                        <p style="color: #7F1D1D; font-size: 14px;">You must be logged into the administrative dashboard to view this module.</p>
+                    </div>
+                `;
+                return; 
+            }
+
+            // User IS logged in. Proceed with bootstrapping the module.
+            window.loadBranchesForStaff();
+            window.loadStaff();
+        });
 
         // --- 1. SAFE BRANCH LOADER (WITH RBAC) ---
         window.loadBranchesForStaff = async function() {
@@ -200,11 +207,9 @@
                 });
             } catch(e) {
                 console.error("Error loading branches", e);
-                select.innerHTML = '<option value="">Select Branch</option><option value="Mahe">Mahe</option><option value="Chokli">Chokli</option><option value="Panoor">Panoor</option><option value="Koothuparamba">Koothuparamba</option><option value="Nadapuram">Nadapuram</option><option value="Home Care">Home Care</option>';
+                select.innerHTML = '<option value="">Select Branch</option>';
             }
         };
-
-        window.loadBranchesForStaff();
 
         // --- 2. LOAD STAFF (WITH RBAC) ---
         window.loadStaff = async function() {
@@ -242,6 +247,12 @@
                     const safeBranch = data.branch || 'N/A';
                     const safeContact = data.mobile || data.contact || 'N/A';
 
+                    // HIDE DELETE ICON IF NOT ADMIN
+                    let deleteIconHtml = '';
+                    if (window.currentUser && window.currentUser.role === 'admin') {
+                        deleteIconHtml = `<span class="material-symbols-rounded icon-action delete" title="Remove" style="margin-left: 8px;" onclick="window.deleteStaff('${docId}')">delete</span>`;
+                    }
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td data-label="Name">
@@ -255,7 +266,7 @@
                         <td data-label="Contact">+91 ${safeContact}</td>
                         <td data-label="Actions" style="text-align: right;">
                             <span class="material-symbols-rounded icon-action" title="Edit" onclick="window.editStaff('${docId}')">edit</span>
-                            <span class="material-symbols-rounded icon-action delete" title="Remove" style="margin-left: 8px;" onclick="window.deleteStaff('${docId}')">delete</span>
+                            ${deleteIconHtml}
                         </td>
                     `;
                     tableBody.appendChild(tr);
@@ -265,8 +276,6 @@
                 tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: var(--danger);">Error loading data. Check Firestore rules.</td></tr>';
             }
         }
-
-        window.loadStaff();
 
         // --- 3. LIVE SEARCH ---
         window.searchStaff = function() {
