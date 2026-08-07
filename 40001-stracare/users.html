@@ -1,0 +1,96 @@
+<!-- users.html -->
+<div class="module-container">
+    <div style="padding: 24px;">
+        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 24px;">User Management</h2>
+        
+        <div style="background: var(--surface); padding: 24px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 24px;">
+            <h3 style="font-size: 16px; margin-bottom: 16px;">Assign New Role</h3>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <input type="email" id="newUserEmail" placeholder="User Email" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; flex: 1; min-width: 200px;">
+                <select id="newUserRole" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <option value="user">Standard User</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <input type="text" id="newUserBranch" placeholder="Branch Name (e.g. B1)" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                <button onclick="window.saveUserRole()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Save User</button>
+            </div>
+        </div>
+
+        <div class="dash-table-wrapper">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Branch</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr><td colspan="4" style="text-align: center;">Loading users...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Security check inside the module just in case
+        if (window.currentUser && window.currentUser.role !== 'admin') {
+            document.querySelector('.module-container').innerHTML = '<h3 style="color:red; padding: 20px;">Access Denied. Admins Only.</h3>';
+        } else {
+            window.loadUsers = async function() {
+                const tbody = document.getElementById('usersTableBody');
+                try {
+                    const querySnapshot = await getDocs(collection(db, "users"));
+                    let html = '';
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        html += `
+                            <tr>
+                                <td>${doc.id}</td>
+                                <td><span class="badge ${data.role === 'admin' ? 'badge-completed' : 'badge-pending'}">${data.role}</span></td>
+                                <td>${data.branch || '-'}</td>
+                                <td><button onclick="window.deleteUser('${doc.id}')" style="color: var(--danger); background: none; border: none; cursor: pointer;">Delete</button></td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                } catch(e) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Error loading users: ${e.message}</td></tr>`;
+                }
+            };
+
+            window.saveUserRole = async function() {
+                const email = document.getElementById('newUserEmail').value.trim().toLowerCase();
+                const role = document.getElementById('newUserRole').value;
+                const branch = document.getElementById('newUserBranch').value;
+
+                if(!email) return alert("Email is required");
+
+                try {
+                    await setDoc(doc(db, "users", email), {
+                        role: role,
+                        branch: branch
+                    });
+                    alert("User role saved successfully!");
+                    window.loadUsers();
+                } catch(e) {
+                    alert("Error saving user: " + e.message);
+                }
+            };
+
+            window.deleteUser = async function(email) {
+                if(confirm(`Are you sure you want to remove access for ${email}?`)) {
+                    await deleteDoc(doc(db, "users", email));
+                    window.loadUsers();
+                }
+            };
+
+            // Initial load
+            window.loadUsers();
+        }
+    </script>
+</div>
