@@ -301,177 +301,16 @@
         </div>
     </div> 
     
-<script type="module">
-    // 1. Import from your new config file instead of initializing inline
-    import { auth, db } from './firebase-config.js';
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+<!-- APP WRAPPER ENDS ABOVE THIS -->
+    
+    <script type="module">
+        // 1. IMPORT FIREBASE CONFIG & MODULES
+        import { auth, db } from './firebase-config.js';
+        import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    window.currentUser = null;
-
-    // UI Toggle: Switch between Login and Reset Password views
-    window.toggleResetView = function(showReset) {
-        document.getElementById('login-form-box').style.display = showReset ? 'none' : 'block';
-        document.getElementById('reset-form-box').style.display = showReset ? 'block' : 'none';
-        document.getElementById('reset-msg').innerText = ''; // Clear previous messages
-        
-        // Auto-fill email in reset box if they already started typing it in login
-        if (showReset) {
-            document.getElementById('resetEmail').value = document.getElementById('loginEmail').value;
-        }
-    };
-
-    // Toggle Password Visibility
-    window.togglePassword = function() {
-        const passInput = document.getElementById('loginPassword');
-        const passIcon = document.getElementById('togglePassIcon');
-        if (passInput.type === 'password') {
-            passInput.type = 'text';
-            passIcon.innerText = 'visibility';
-        } else {
-            passInput.type = 'password';
-            passIcon.innerText = 'visibility_off';
-        }
-    };
-
-    // Handle Password Reset
-    window.handlePasswordReset = async function() {
-        const email = document.getElementById('resetEmail').value.trim();
-        const msgDiv = document.getElementById('reset-msg');
-        const resetBtn = document.getElementById('resetBtn');
-
-        if (!email) {
-            msgDiv.innerText = "Please enter your email address.";
-            msgDiv.style.color = "var(--danger)";
-            return;
-        }
-
-        resetBtn.innerText = "Sending...";
-        resetBtn.disabled = true;
-
-        try {
-            await sendPasswordResetEmail(auth, email);
-            msgDiv.innerText = "Reset link sent! Please check your inbox.";
-            msgDiv.style.color = "var(--success)";
-        } catch (error) {
-            console.error("Password reset error:", error);
-            msgDiv.innerText = "Error: Could not send reset link. Verify email.";
-            msgDiv.style.color = "var(--danger)";
-        } finally {
-            resetBtn.innerText = "Send Reset Link";
-            resetBtn.disabled = false;
-        }
-    };
-
-    // Handle Login using Firebase Auth
-    window.handleLogin = async function() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-        const rememberMe = document.getElementById('rememberMe').checked;
-        const errDiv = document.getElementById('login-error');
-        const loginBtn = document.getElementById('loginBtn');
-
-        if (!email || !password) {
-            errDiv.innerText = "Please enter both email and password.";
-            errDiv.style.display = 'block';
-            return;
-        }
-
-        loginBtn.innerText = "Authenticating...";
-        loginBtn.disabled = true;
-        errDiv.style.display = 'none';
-
-        try {
-            const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-            await setPersistence(auth, persistenceType);
-            await signInWithEmailAndPassword(auth, email, password);
-            // The onAuthStateChanged listener handles the rest
-        } catch (error) {
-            errDiv.innerText = "Invalid credentials or user not found.";
-            errDiv.style.display = 'block';
-            loginBtn.innerText = "Access Dashboard";
-            loginBtn.disabled = false;
-        }
-    };
-
-    // Handle Logout
-    window.handleLogout = async function() {
-        try {
-            await signOut(auth);
-            window.currentUser = null;
-            document.getElementById('app-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-            document.getElementById('loginPassword').value = ''; 
-        } catch (error) {
-            console.error("Error signing out: ", error);
-        }
-    };
-
-    // Global Auth State Observer (The Gatekeeper)
-    onAuthStateChanged(auth, async (user) => {
-        const loginBtn = document.getElementById('loginBtn');
-        if (loginBtn) {
-            loginBtn.innerText = "Access Dashboard";
-            loginBtn.disabled = false;
-        }
-
-        if (user) {
-            try {
-                const emailLower = user.email.toLowerCase();
-                
-                // Fetch Role dynamically from Firestore 'users' collection
-                const userDocRef = doc(db, "users", emailLower);
-                const userDoc = await getDoc(userDocRef);
-
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    window.currentUser = {
-                        email: emailLower,
-                        role: userData.role || "user",
-                        branch: userData.branch || "Unknown"
-                    };
-
-                    // Show App Wrapper
-                    document.getElementById('login-container').style.display = 'none';
-                    document.getElementById('app-container').style.display = 'flex';
-                    
-                    const branchTextElement = document.getElementById('dash-branch-text');
-                    if (window.currentUser.role === 'admin') {
-                        branchTextElement.innerText = "Master Access (All Branches)";
-                        branchTextElement.style.color = "var(--primary)";
-                    } else {
-                        branchTextElement.innerText = window.currentUser.branch;
-                    }
-                    
-                    if(window.fetchDashboardData) window.fetchDashboardData();
-
-                } else {
-                    // User exists in Auth, but no role is defined in Firestore DB
-                    throw new Error("No database access found. Contact Administrator.");
-                }
-
-            } catch (error) {
-                console.error(error);
-                await signOut(auth); // Log them back out if they have no role
-                const errDiv = document.getElementById('login-error');
-                errDiv.innerText = error.message;
-                errDiv.style.display = 'block';
-            }
-
-        } else {
-            // User is signed out.
-            window.currentUser = null;
-            document.getElementById('app-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-        }
-    });
-
-    // ... [Keep the rest of your original script variables and functions here: window.allApts, window.formatIndianDate, window.renderChart, window.fetchDashboardData, etc.] ...
-
-</script>
-
-
-        // Global UI State
+        // 2. GLOBAL UI STATE
+        window.currentUser = null;
         window.allApts = [];
         window.aptDatesSet = new Set();
         window.apptChartInstance = null; 
@@ -497,6 +336,159 @@
             "view-seal": "seal.html"
         };
 
+        // 3. LOGIN & AUTHENTICATION LOGIC
+        window.toggleResetView = function(showReset) {
+            document.getElementById('login-form-box').style.display = showReset ? 'none' : 'block';
+            document.getElementById('reset-form-box').style.display = showReset ? 'block' : 'none';
+            document.getElementById('reset-msg').innerText = ''; 
+            if (showReset) {
+                document.getElementById('resetEmail').value = document.getElementById('loginEmail').value;
+            }
+        };
+
+        window.togglePassword = function() {
+            const passInput = document.getElementById('loginPassword');
+            const passIcon = document.getElementById('togglePassIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                passIcon.innerText = 'visibility';
+            } else {
+                passInput.type = 'password';
+                passIcon.innerText = 'visibility_off';
+            }
+        };
+
+        window.handlePasswordReset = async function() {
+            const email = document.getElementById('resetEmail').value.trim();
+            const msgDiv = document.getElementById('reset-msg');
+            const resetBtn = document.getElementById('resetBtn');
+
+            if (!email) {
+                msgDiv.innerText = "Please enter your email address.";
+                msgDiv.style.color = "var(--danger)";
+                return;
+            }
+
+            resetBtn.innerText = "Sending...";
+            resetBtn.disabled = true;
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                msgDiv.innerText = "Reset link sent! Please check your inbox.";
+                msgDiv.style.color = "var(--success)";
+            } catch (error) {
+                msgDiv.innerText = "Error: Could not send reset link. Verify email.";
+                msgDiv.style.color = "var(--danger)";
+            } finally {
+                resetBtn.innerText = "Send Reset Link";
+                resetBtn.disabled = false;
+            }
+        };
+
+        window.handleLogin = async function() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const errDiv = document.getElementById('login-error');
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                errDiv.innerText = "Please enter both email and password.";
+                errDiv.style.display = 'block';
+                return;
+            }
+
+            loginBtn.innerText = "Authenticating...";
+            loginBtn.disabled = true;
+            errDiv.style.display = 'none';
+
+            try {
+                const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, persistenceType);
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                errDiv.innerText = "Invalid credentials or user not found.";
+                errDiv.style.display = 'block';
+                loginBtn.innerText = "Access Dashboard";
+                loginBtn.disabled = false;
+            }
+        };
+
+        window.handleLogout = async function() {
+            try {
+                await signOut(auth);
+                window.currentUser = null;
+                document.getElementById('app-container').style.display = 'none';
+                document.getElementById('login-container').style.display = 'flex';
+                document.getElementById('loginPassword').value = ''; 
+            } catch (error) {
+                console.error("Error signing out: ", error);
+            }
+        };
+
+        // THE GATEKEEPER - Checks Database for Roles
+        onAuthStateChanged(auth, async (user) => {
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.innerText = "Access Dashboard";
+                loginBtn.disabled = false;
+            }
+
+            if (user) {
+                try {
+                    const emailLower = user.email.toLowerCase();
+                    
+                    // Fetch Role from Firestore 'users' collection
+                    const userDocRef = doc(db, "users", emailLower);
+                    const userDoc = await getDoc(userDocRef);
+
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        window.currentUser = {
+                            email: emailLower,
+                            role: userData.role || "user",
+                            branch: userData.branch || "Unknown"
+                        };
+
+                        document.getElementById('login-container').style.display = 'none';
+                        document.getElementById('app-container').style.display = 'flex';
+                        
+                        const branchTextElement = document.getElementById('dash-branch-text');
+                        if (window.currentUser.role === 'admin') {
+                            branchTextElement.innerText = "Master Access (All Branches)";
+                            branchTextElement.style.color = "var(--primary)";
+                        } else {
+                            branchTextElement.innerText = window.currentUser.branch;
+                        }
+                        
+                        // Hide Users menu for non-admins
+                        if (window.currentUser.role !== 'admin') {
+                            const userMenuBtn = document.getElementById('nav-users-btn');
+                            if(userMenuBtn) userMenuBtn.style.display = 'none';
+                        }
+                        
+                        if(window.fetchDashboardData) window.fetchDashboardData();
+
+                    } else {
+                        throw new Error("No database access found. Contact Administrator.");
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    await signOut(auth); 
+                    const errDiv = document.getElementById('login-error');
+                    errDiv.innerText = error.message;
+                    errDiv.style.display = 'block';
+                }
+
+            } else {
+                window.currentUser = null;
+                document.getElementById('app-container').style.display = 'none';
+                document.getElementById('login-container').style.display = 'flex';
+            }
+        });
+
+        // 4. DASHBOARD NAVIGATION & UI
         window.toggleMenu = function() {
             const sidebar = document.getElementById('sidebar-container');
             if(sidebar) sidebar.classList.toggle('open');
@@ -570,6 +562,7 @@
             }
         };
 
+        // 5. CHARTS & CALENDAR RENDERING
         window.renderChart = function(pending, completed, rescheduled, cancelled) {
             try {
                 if (typeof Chart === 'undefined') return; 
@@ -697,7 +690,7 @@
             document.getElementById('min-arc').style.strokeDashoffset = circumference - (circumference * (now.getMinutes() / 60));
         };
 
-        // Fetch Dashboard Data from Firebase
+        // 6. FETCH DASHBOARD DATA FROM FIREBASE
         window.fetchDashboardData = async function() {
             if (!window.currentUser) return; 
 
@@ -784,7 +777,7 @@
             }
         };
 
-        // Bootstrap Application
+        // 7. BOOTSTRAP APPLICATION
         document.addEventListener('DOMContentLoaded', () => {
             window.loadComponent('header-container', 'header.html');
             window.loadComponent('sidebar-container', 'sidebar.html');
