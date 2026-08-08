@@ -104,11 +104,50 @@
 
         .dash-error { display: none; background: #FEF2F2; border: 1px solid #FCA5A5; color: var(--danger); padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; margin-bottom: 20px; align-items: center; gap: 8px; }
 
+        /* Draggable & Resizable Calculator Popup Styles */
+        #calc-popup-container {
+            display: none; 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            width: 320px; 
+            height: 480px; 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25); 
+            border: 1px solid var(--border); 
+            z-index: 10000; 
+            resize: both; /* Makes it resizable */
+            overflow: hidden; 
+            flex-direction: column;
+            min-width: 250px;
+            min-height: 350px;
+        }
+        #calc-popup-header {
+            background: var(--surface); 
+            color: var(--text-main); 
+            padding: 12px 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            cursor: move; /* Drag cursor */
+            border-bottom: 1px solid var(--border);
+            user-select: none;
+        }
+
         @media (max-width: 768px) {
             #sidebar-container { position: fixed; z-index: 1000; transform: translateX(-100%); width: 280px; box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
             #sidebar-container.open { transform: translateX(0); }
             #bottomnav-container { display: block; }
             #main-content { padding: 16px; padding-bottom: 100px; }
+            
+            /* On mobile, center the calculator popup */
+            #calc-popup-container {
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                bottom: auto; right: auto;
+                resize: none;
+            }
         }
     </style>
 </head>
@@ -282,6 +321,7 @@
 
                 </div>
 
+                <!-- ALL REQUIRED VIEW CONTAINERS -->
                 <div id="view-patients" class="view-section"></div>
                 <div id="view-appointments" class="view-section"></div>
                 <div id="view-transaction" class="view-section"></div>
@@ -301,12 +341,27 @@
                 <div id="view-aboutapp" class="view-section"></div>
                 <div id="view-privacy" class="view-section"></div>
                 <div id="view-backup" class="view-section"></div>
-                <div id="view-calc" class="view-section"></div>
                 
+                <!-- NOTE: view-calc is defined here but will be intercepted and opened in the popup instead! -->
+                <div id="view-calc" class="view-section"></div>
                 
             </main>
             <div id="bottomnav-container"></div>
         </div>
+
+        <!-- CALCULATOR POPUP WIDGET (Draggable & Resizable) -->
+        <div id="calc-popup-container">
+            <div id="calc-popup-header">
+                <span style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-rounded" style="font-size: 20px; color: var(--primary);">calculate</span> Calculator
+                </span>
+                <span class="material-symbols-rounded" style="cursor: pointer; font-size: 20px;" onclick="window.toggleCalculator()">close</span>
+            </div>
+            <div id="calc-popup-content" style="flex: 1; padding: 0; overflow-y: auto; overflow-x: hidden; height: 100%;">
+                <!-- calc.html will be dynamically loaded here -->
+            </div>
+        </div>
+
     </div> 
     
 <!-- APP WRAPPER ENDS ABOVE THIS -->
@@ -328,6 +383,7 @@
         window.calMonth = window.currentDate.getMonth(); 
         window.selectedDateStr = window.currentDate.toISOString().split('T')[0]; 
         
+        // FIXED COMMA SYNTAX ERRORS HERE
         window.cmAppFileMap = {
             "view-patients": "patients.html",
             "view-appointments": "appointments.html",
@@ -338,12 +394,17 @@
             "view-staff": "staff.html",
             "view-attendance": "attendance.html",
             "view-users": "users.html",
-            "view-backup": "backup.html",
+            "view-clinic-details": "clinic-details.html",
             "view-company": "company.html",
             "view-letterhead": "letterhead.html",
-            "view-seal": "seal.html"
-            "view-updates": "updates.html"
-            "view-qr": "qr.html"
+            "view-seal": "seal.html",
+            "view-qr": "upi-qr.html",
+            "view-updates": "updates.html",
+            "view-licenceinfo": "licenceinfo.html",
+            "view-aboutapp": "aboutapp.html",
+            "view-privacy": "privacy.html",
+            "view-backup": "backup.html",
+            "view-calc": "calc.html" 
         };
 
         // 3. LOGIN & AUTHENTICATION LOGIC
@@ -522,7 +583,87 @@
             } catch (error) { console.error(`Error loading ${filename}`); }
         };
 
+        // --- NEW POPUP CALCULATOR LOGIC ---
+        window.toggleCalculator = async function() {
+            const popup = document.getElementById('calc-popup-container');
+            if(popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+                const contentDiv = document.getElementById('calc-popup-content');
+                // Only fetch calc.html if it hasn't been loaded yet
+                if(contentDiv.innerHTML.trim() === '') {
+                    contentDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Loading Calculator...</div>';
+                    try {
+                        const response = await fetch(window.cmAppFileMap['view-calc']);
+                        if(response.ok) {
+                            contentDiv.innerHTML = await response.text();
+                            
+                            // Re-run any scripts that came inside calc.html
+                            contentDiv.querySelectorAll('script').forEach(oldScript => {
+                                const newScript = document.createElement('script');
+                                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                                oldScript.parentNode.replaceChild(newScript, oldScript);
+                            });
+                        }
+                    } catch(e) {
+                        contentDiv.innerHTML = '<div style="padding: 20px; color: red; text-align: center;">Error loading calc.html</div>';
+                    }
+                }
+            }
+        };
+
+        // Make the Calculator Modal Draggable
+        function dragElement(elmnt) {
+            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            if (document.getElementById(elmnt.id + "-header")) {
+                document.getElementById(elmnt.id + "-header").onmousedown = dragMouseDown;
+            } else {
+                elmnt.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+                // Reset bottom/right so top/left dictate position
+                elmnt.style.bottom = "auto";
+                elmnt.style.right = "auto";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+        // Initialize dragging on load
+        document.addEventListener('DOMContentLoaded', () => {
+            dragElement(document.getElementById("calc-popup-container"));
+        });
+
+
         window.switchView = async function(targetId, navElement) {
+            // INTERCEPT CALCULATOR REQUEST
+            if(targetId === 'view-calc') {
+                window.toggleCalculator();
+                return; // Do not switch the background view
+            }
+
             document.querySelectorAll('.nav-link, .nav-item, .bottom-nav-item').forEach(el => el.classList.remove('active'));
             if(navElement && !navElement.classList.contains('close-menu-btn')) navElement.classList.add('active');
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
