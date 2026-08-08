@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flow - Responsive Orders History</title>
+    <!-- Include Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Include Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-body: #a3abc0;
+            --bg-main: #f1f5f9;
+            --bg-sidebar: #f8fafc;
+            --white: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --sidebar-width: 260px;
+            --right-panel-width: 340px;
+            --header-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden; /* Prevent body scroll, handle scroll internally */
+        }
+
+        /* --- Mobile Header (Hidden on Desktop) --- */
+        .mobile-header {
+            display: none;
+            height: var(--header-height);
+            background-color: var(--white);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .mobile-header .brand {
+            margin-bottom: 0;
+            font-size: 18px;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--text-dark);
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Main App Container --- */
+        .app-container {
+            width: 100%;
+            max-width: 1440px;
+            height: 100%;
+            max-height: 900px;
+            background-color: var(--bg-main);
+            border-radius: 24px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            position: relative;
+        }
+
+        /* --- Sidebar Overlay for Mobile --- */
+        .sidebar-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 45;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--white);
+            display: flex;
+            flex-direction: column;
+            padding: 32px 24px;
+            border-right: 1px solid var(--border);
+            z-index: 50;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 40px;
+        }
+
+        .brand i { color: var(--primary); }
+
+        .user-profile {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .user-profile .avatar-icon {
+            width: 64px;
+            height: 64px;
+            color: var(--primary);
+            margin-bottom: 12px;
+            background: #e0e7ff;
+            padding: 12px;
+            border-radius: 50%;
+        }
+
+        .user-profile h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .user-profile p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-item i { width: 20px; height: 20px; }
+
+        .nav-item:hover:not(.active) {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary);
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .logout { margin-top: auto; color: var(--danger); }
+        .logout i { color: var(--danger); }
+
+        /* --- Scrollable Content Wrapper --- */
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background-color: var(--bg-main);
+        }
+
+        /* --- Center Content Area --- */
+        .content-area {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* Prevents flex blowout */
+        }
+
+        .main-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 32px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            min-height: 600px; /* Ensure it looks good when empty */
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .header-icon {
+            width: 56px;
+            height: 56px;
+            background-color: var(--primary);
+            color: var(--white);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .page-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+
+        .page-header p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Table Responsiveness */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .table-headers {
+            display: grid;
+            grid-template-columns: minmax(120px, 1fr) 1fr 1fr 1fr;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+            min-width: 450px; /* Force scroll on very small devices */
+        }
+
+        .table-headers span {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        /* --- Empty State --- */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .empty-illustration {
+            width: 120px;
+            height: 120px;
+            background-color: #e0e7ff;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .empty-illustration i { width: 64px; height: 64px; }
+
+        .empty-state h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 250px;
+            line-height: 1.5;
+        }
+
+        /* --- Pagination --- */
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 24px;
+            margin-top: auto;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .pagination-info { font-size: 13px; color: var(--text-muted); }
+        
+        .pagination-dots { 
+            display: flex; 
+            gap: 8px; 
+            flex-wrap: wrap;
+        }
+
+        .dot {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: var(--white);
+        }
+
+        .dot.active {
+            background-color: var(--text-dark);
+            color: var(--white);
+            border-color: var(--text-dark);
+        }
+
+        /* --- Right Panel --- */
+        .right-panel {
+            width: var(--right-panel-width);
+            background-color: var(--bg-main);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .illustration-box {
+            height: 280px;
+            background-color: #fef3c7; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 24px 0 24px; 
+            color: #d97706; 
+        }
+
+        .illustration-box i {
+            width: 120px;
+            height: 120px;
+            opacity: 0.8;
+        }
+
+        .filter-section {
+            padding: 32px 24px;
+            background: var(--white);
+            flex: 1;
+            border-radius: 24px 0 0 0;
+            margin-top: -20px; 
+            z-index: 10;
+        }
+
+        .filter-group { margin-bottom: 24px; }
+        .filter-group h3 { font-size: 14px; font-weight: 600; color: var(--text-dark); margin-bottom: 4px; }
+        .filter-group > p { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+
+        .select-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-dark);
+            outline: none;
+            appearance: none; 
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center;
+            background-color: var(--white);
+            cursor: pointer;
+        }
+
+        .date-input-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .date-input-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .date-input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-dark);
+            outline: none;
+        }
+
+        .btn-search {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-search:hover { background-color: var(--primary-hover); }
+
+        .filter-footer-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+            margin-top: 32px;
+        }
+
+        /* =========================================
+           RESPONSIVE MEDIA QUERIES 
+           ========================================= */
+        
+        /* TABLET & SMALL DESKTOP (Max Width: 1024px) */
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                flex-direction: column; /* Stack main content and right panel */
+            }
+            .right-panel {
+                width: 100%;
+                border-top: 1px solid var(--border);
+            }
+            .illustration-box {
+                border-radius: 0; /* Remove specific corner rounding */
+                height: 180px; /* Smaller height for tablet/mobile */
+            }
+            .filter-section {
+                border-radius: 0;
+                margin-top: 0;
+            }
+        }
+
+        /* MOBILE (Max Width: 768px) */
+        @media (max-width: 768px) {
+            body {
+                padding: 0; /* Remove body padding on mobile */
+            }
+
+            .app-container {
+                border-radius: 0; /* Take up full screen edge-to-edge */
+                flex-direction: column;
+                max-height: 100vh;
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            /* Off-canvas Sidebar */
+            .sidebar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: block; /* Make it block but opacity 0 */
+                pointer-events: none; /* Ignore clicks when hidden */
+            }
+
+            .sidebar-overlay.active {
+                pointer-events: auto; /* Allow clicks when visible */
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .main-card {
+                padding: 20px;
+                min-height: 400px;
+            }
+            
+            .page-header h1 {
+                font-size: 18px;
+            }
+
+            .header-icon {
+                width: 48px;
+                height: 48px;
+            }
+
+            .pagination-container {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <div class="brand">
+                <i data-lucide="utensils-crossed"></i> Flow
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i data-lucide="menu"></i>
+            </button>
+        </header>
+
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <i data-lucide="utensils-crossed"></i> Flow
+            </div>
+
+            <div class="user-profile">
+                <i data-lucide="circle-user-round" class="avatar-icon" stroke-width="1.5"></i>
+                <h3>Welcome Home!</h3>
+                <p>Bestro Restaurant</p>
+            </div>
+
+            <nav class="nav-menu">
+                <a class="nav-item">
+                    <i data-lucide="shopping-bag"></i> Point of Sales
+                </a>
+                <a class="nav-item">
+                    <i data-lucide="package"></i> Inventory
+                </a>
+                <a class="nav-item active">
+                    <i data-lucide="receipt"></i> Orders History
+                </a>
+                <a class="nav-item">
+                    <i data-lucide="ticket"></i> Coupons
+                </a>
+                <a class="nav-item">
+                    <i data-lucide="settings"></i> Setting
+                </a>
+                <a class="nav-item logout">
+                    <i data-lucide="log-out"></i> Logout
+                </a>
+            </nav>
+        </aside>
+
+        <!-- SCROLLABLE WRAPPER -->
+        <div class="content-wrapper">
+            
+            <!-- MAIN CONTENT (Orders History & Empty State) -->
+            <main class="content-area">
+                <div class="main-card">
+                    
+                    <header class="page-header">
+                        <div class="header-icon">
+                            <i data-lucide="clipboard-list"></i>
+                        </div>
+                        <div>
+                            <h1>Orders History</h1>
+                            <p>Review and track all past restaurant orders for better insight</p>
+                        </div>
+                    </header>
+
+                    <div class="table-responsive">
+                        <div class="table-headers">
+                            <span>Order Number</span>
+                            <span>Status</span>
+                            <span>Total</span>
+                            <span>Option</span>
+                        </div>
+                    </div>
+
+                    <div class="empty-state">
+                        <div class="empty-illustration">
+                            <i data-lucide="package-search" stroke-width="1.5"></i>
+                        </div>
+                        <h2>No data found</h2>
+                        <p>This data still empty, change order date or add some order</p>
+                    </div>
+
+                    <div class="pagination-container">
+                        <span class="pagination-info">Showing 10 items over 100 items</span>
+                        <div class="pagination-dots">
+                            <div class="dot active">1</div>
+                            <div class="dot">2</div>
+                            <div class="dot">3</div>
+                            <div class="dot">4</div>
+                            <div class="dot">5</div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+            <!-- RIGHT PANEL (Filters & Illustration) -->
+            <aside class="right-panel">
+                
+                <div class="illustration-box">
+                    <i data-lucide="receipt-text" stroke-width="1"></i>
+                </div>
+
+                <div class="filter-section">
+                    
+                    <div class="filter-group">
+                        <h3>Filtering Status</h3>
+                        <p>View completed sales or refund request</p>
+                        <select class="select-input">
+                            <option value="all">All Data</option>
+                            <option value="success">Success</option>
+                            <option value="refund">Refunded</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <h3>Find Order by Date</h3>
+                        <p>Quickly locate specific transaction</p>
+                        
+                        <div class="date-input-wrapper">
+                            <i data-lucide="calendar"></i>
+                            <input type="text" class="date-input" placeholder="Select date range">
+                        </div>
+                        
+                        <button class="btn-search">Search</button>
+                    </div>
+
+                    <p class="filter-footer-text">
+                        Check out the latest updates on your orders, sorted by date. Stay informed about your filtering status!
+                    </p>
+
+                </div>
+            </aside>
+            
+        </div> <!-- End Scrollable Wrapper -->
+
+    </div>
+
+    <!-- Initialize Lucide Icons & Mobile Menu Logic -->
+    <script>
+        // Render Icons
+        lucide.createIcons();
+
+        // Mobile Menu Toggle Logic
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleMenu() {
+            sidebar.classList.toggle('open');
+            sidebarOverlay.classList.toggle('active');
+        }
+
+        function closeMenu() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        }
+
+        menuToggle.addEventListener('click', toggleMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+    </script>
+</body>
+</html>
