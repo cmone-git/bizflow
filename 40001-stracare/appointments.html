@@ -103,7 +103,7 @@
             
             <h4 style="color: var(--primary); margin: 0 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px;">1. Patient Details</h4>
             
-            <!-- NEW SEARCH / AUTO-FILL COMPONENT -->
+            <!-- SEARCH / AUTO-FILL COMPONENT -->
             <div class="input-group" style="margin-bottom: 16px;">
                 <div style="grid-column: 1 / -1;">
                     <label class="form-label" style="color: var(--primary);">Select / Search Patient (Auto-fills details below) ▼</label>
@@ -172,9 +172,8 @@
             <div class="input-group three-cols">
                 <div>
                     <label class="form-label">Therapist Assigned *</label>
-                    <select id="aptTherapist" class="form-input" required>
-                        <option value="">Loading Therapists...</option>
-                    </select>
+                    <input list="therapists-datalist" id="aptTherapist" class="form-input" placeholder="Search / Select Therapist..." required autocomplete="off">
+                    <datalist id="therapists-datalist"></datalist>
                 </div>
                 <div>
                     <label class="form-label">Appointment Status *</label>
@@ -344,7 +343,7 @@
 
         window.appointmentsDataCache = {};
         window.allBranchesString = "";
-        window.allPatientsCache = {}; // Cache for the new dropdown feature
+        window.allPatientsCache = {}; // Cache for the dropdown feature
 
 // --- AUTHENTICATION GATEKEEPER ---
         // This ensures the page content only loads if a valid user session exists
@@ -369,7 +368,7 @@
             // --------------------------------------------
 
             // User IS logged in. Proceed with bootstrapping the module.
-            window.loadPatientsForApt(); // Triggers our new Dropdown Search loader
+            window.loadPatientsForApt(); 
             window.loadBranchesForApt();
             window.loadTherapistsForApt();
             setMinBookingDate();
@@ -493,7 +492,8 @@
         };
 
         window.loadTherapistsForApt = async function() {
-            const therapistSelect = document.getElementById('aptTherapist');
+            const dataList = document.getElementById('therapists-datalist');
+            if(!dataList) return;
             try {
                 const snap = await getDocs(collection(db, "therapists"));
                 let thList = [];
@@ -503,11 +503,11 @@
                 });
                 thList.sort();
 
-                let html = '<option value="">Select Therapist</option>';
-                thList.forEach(tName => html += `<option value="${tName}">${tName}</option>`);
-                therapistSelect.innerHTML = html;
+                let html = '';
+                thList.forEach(tName => html += `<option value="${tName}">`);
+                dataList.innerHTML = html;
             } catch(e) {
-                therapistSelect.innerHTML = '<option value="">Select Therapist</option>';
+                console.error("Error loading therapists: ", e);
             }
         };
 
