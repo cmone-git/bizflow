@@ -429,12 +429,20 @@
             }
         }
 
-        // --- 0. SAFE DYNAMIC LOADERS ---
+// --- 0. SAFE DYNAMIC LOADERS ---
         window.loadPatientsForApt = async function() {
             const dataList = document.getElementById('patients-datalist');
             if(!dataList) return;
             try {
-                const snap = await getDocs(collection(db, "patients"));
+                // NEW: Apply branch filter if the user is not an admin
+                let q;
+                if (window.currentUser && window.currentUser.role !== 'admin') {
+                    q = query(collection(db, "patients"), where("branch", "==", window.currentUser.branch));
+                } else {
+                    q = query(collection(db, "patients"));
+                }
+                
+                const snap = await getDocs(q);
                 let html = '';
                 snap.forEach(doc => {
                     const p = doc.data();
@@ -491,11 +499,19 @@
             }
         };
 
-        window.loadTherapistsForApt = async function() {
-            const dataList = document.getElementById('therapists-datalist');
-            if(!dataList) return;
-            try {
-                const snap = await getDocs(collection(db, "therapists"));
+            window.loadTherapistsForApt = async function() {
+                const dataList = document.getElementById('therapists-datalist');
+                if(!dataList) return;
+                try {
+                // NEW: Apply branch filter if the user is not an admin
+                let q;
+                if (window.currentUser && window.currentUser.role !== 'admin') {
+                    q = query(collection(db, "therapists"), where("branch", "==", window.currentUser.branch));
+                } else {
+                    q = query(collection(db, "therapists"));
+                }
+
+                const snap = await getDocs(q);
                 let thList = [];
                 snap.forEach(doc => { 
                     const tName = doc.data().name;
