@@ -1,17 +1,52 @@
 <style>
+    /* Wrapper to manage full height */
     .sidebar-inner-wrapper { display: flex; flex-direction: column; min-height: 100%; height: 100%; }
     
     /* Make the top logo header sticky */
     .sidebar-header { position: sticky; top: 0; background: var(--surface); z-index: 10; border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;}
     .sidebar-logo { max-width: 140px; height: auto; object-fit: contain; display: block; } 
+    .close-menu { background: none; border: none; cursor: pointer; color: var(--text-main); display: flex; align-items: center; justify-content: center; }
     
-    .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 10px; padding-bottom: 20px; } 
+    /* Navigation Container */
+    .sidebar-nav { flex: 1; overflow-y: auto; padding-top: 16px; padding-bottom: 20px; display: flex; flex-direction: column; gap: 4px; } 
     
+    /* Sidebar Navigation Links */
+    .nav-link { 
+        display: flex; 
+        align-items: center; 
+        width: calc(100% - 32px); 
+        margin: 0 16px; 
+        padding: 12px 16px; 
+        border: none; 
+        background: transparent; 
+        text-align: left; 
+        cursor: pointer; 
+        font-size: 14px; 
+        font-weight: 500; 
+        color: var(--text-muted); 
+        border-radius: 8px; 
+        transition: all 0.2s ease; 
+        font-family: inherit;
+    }
+    .nav-link:hover { background: #FAFAFA; color: var(--text-main); }
+    .nav-link.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .nav-link .material-symbols-rounded { font-size: 22px; margin-right: 12px; color: inherit; transition: color 0.2s ease; }
+    
+    /* Dividers and Badges */
+    .nav-divider { height: 1px; background: var(--border); margin: 12px 24px; flex-shrink: 0; }
+    .menu-badge { margin-left: auto; background: var(--primary); color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .menu-badge.pending { background: var(--warning); color: #fff; }
+
     /* App Name and Version at the bottom */
-    .sidebar-footer { padding: 20px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; background: #FAFAFA; margin-top: auto; }
+    .sidebar-footer { padding: 20px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; background: #FAFAFA; margin-top: auto; flex-shrink: 0;}
     .footer-logo { width: 90px; height: auto; margin-bottom: 6px; object-fit: contain; }
     .footer-app-name { font-size: 13px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; text-align: center; }
     .footer-version { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Hide close button on desktop */
+    @media (min-width: 769px) {
+        .close-menu { display: none; }
+    }
 </style>
 
 <div class="sidebar-inner-wrapper">
@@ -20,19 +55,19 @@
         <div class="sidebar-brand">
             <img src="assets/name.png" alt="Stra Care" class="sidebar-logo">
         </div>
-        <button class="close-menu" onclick="toggleMenu()" style="background: none; border: none; cursor: pointer; color: var(--text-main);">
+        <button class="close-menu" onclick="window.toggleMenu()">
             <span class="material-symbols-rounded">close</span>
         </button>
     </div>
 
     <div class="sidebar-nav" id="sidebar-nav">
-        <button class="nav-link active" data-target="view-dashboard" onclick="switchView('view-dashboard', this)">
+        <button class="nav-link active" data-target="view-dashboard" onclick="window.switchView('view-dashboard', this)">
             <span class="material-symbols-rounded">dashboard</span> Dashboard
         </button>
-        <button class="nav-link" data-target="view-patients" onclick="switchView('view-patients', this)">
+        <button class="nav-link" data-target="view-patients" onclick="window.switchView('view-patients', this)">
             <span class="material-symbols-rounded">groups</span> Patient Data
         </button>
-        <button class="nav-link" data-target="view-appointments" onclick="switchView('view-appointments', this)">
+        <button class="nav-link" data-target="view-appointments" onclick="window.switchView('view-appointments', this)">
             <span class="material-symbols-rounded">event_note</span> Appointments
         </button>
         
@@ -43,54 +78,58 @@
         
         <div class="nav-divider"></div>
         
-        <button class="nav-link" data-target="view-transaction" onclick="switchView('view-transaction', this)">
+        <button class="nav-link" data-target="view-transaction" onclick="window.switchView('view-transaction', this)">
             <span class="material-symbols-rounded">receipt_long</span> Transactions
         </button>
         <button class="nav-link">
             <span class="material-symbols-rounded">pending_actions</span> Pending Payment
             <span class="menu-badge pending">5</span>
         </button>
-        <button class="nav-link" data-target="view-billing" onclick="switchView('view-billing', this)">
+        <button class="nav-link" data-target="view-billing" onclick="window.switchView('view-billing', this)">
             <span class="material-symbols-rounded">request_quote</span> Billing
         </button>
         
         <div class="nav-divider"></div>
         
-        <button class="nav-link" data-target="view-branches" onclick="switchView('view-branches', this)">
+        <button class="nav-link" data-target="view-branches" onclick="window.switchView('view-branches', this)">
             <span class="material-symbols-rounded">apartment</span> Branches
         </button>
-        <button class="nav-link" data-target="view-therapist" onclick="switchView('view-therapist', this)">
+        <button class="nav-link" data-target="view-therapist" onclick="window.switchView('view-therapist', this)">
             <span class="material-symbols-rounded">medical_services</span> Doctors/Therapist
         </button>
         
-        <button class="nav-link" data-target="view-calender" onclick="switchView('view-calender', this)">
+        <button class="nav-link" data-target="view-calender" onclick="window.switchView('view-calender', this)">
             <span class="material-symbols-rounded">calendar_month</span> Calendar
         </button>
         
-        <button class="nav-link" data-target="view-letterhead" onclick="switchView('view-letterhead', this)">
+        <button class="nav-link" data-target="view-letterhead" onclick="window.switchView('view-letterhead', this)">
             <span class="material-symbols-rounded">description</span> Letterhead
         </button>
-        <button class="nav-link" data-target="view-staff" onclick="switchView('view-staff', this)">
+        <button class="nav-link" data-target="view-staff" onclick="window.switchView('view-staff', this)">
             <span class="material-symbols-rounded">badge</span> Staffs
         </button>
         
         <div class="nav-divider"></div>
 
-        <button class="nav-link" data-target="view-users" id="nav-users-btn" onclick="switchView('view-users', this)">
+        <button class="nav-link" data-target="view-users" id="nav-users-btn" onclick="window.switchView('view-users', this)">
             <span class="material-symbols-rounded">manage_accounts</span> Users
         </button>
         
-        <button class="nav-link" data-target="view-clinic-details" onclick="switchView('view-clinic-details', this)">
+        <button class="nav-link" data-target="view-clinic-details" onclick="window.switchView('view-clinic-details', this)">
             <span class="material-symbols-rounded">settings</span> Clinic Details
         </button>
         
-        <button class="nav-link"><span class="material-symbols-rounded">cloud_download</span> Export</button>
+        <!-- Updated Export Link -->
+        <button class="nav-link" data-target="view-export" onclick="window.switchView('view-export', this)">
+            <span class="material-symbols-rounded">cloud_download</span> Export & Backup
+        </button>
+        
         <button class="nav-link"><span class="material-symbols-rounded">info</span> App Info</button>
     </div>
 
     <!-- Explicit App Name & Version -->
     <div class="sidebar-footer">
-        <img src="assets/logo-cm-dark.png" alt="cm" class="footer-logo">
+        <img src="assets/logo-cm.png" alt="cm" class="footer-logo">
         <div class="footer-app-name">Clinic Management App</div>
         <span class="footer-version">Version 1.0.0</span>
     </div>
