@@ -476,32 +476,20 @@
             } catch (error) { console.error(`Error loading ${filename}`); }
         };
 
-        // --- POPUP CALCULATOR LOGIC ---
-        window.toggleCalculator = async function() {
+// --- NEW POPUP CALCULATOR LOGIC (Using Iframe) ---
+        window.toggleCalculator = function() {
             const popup = document.getElementById('calc-popup-container');
+            
             if(popup.style.display === 'flex') {
                 popup.style.display = 'none';
             } else {
                 popup.style.display = 'flex';
                 const contentDiv = document.getElementById('calc-popup-content');
                 
+                // Only load the iframe if it hasn't been loaded yet
                 if(contentDiv.innerHTML.trim() === '') {
-                    contentDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Loading Calculator...</div>';
-                    try {
-                        const response = await fetch(window.cmAppFileMap['view-calc']);
-                        if(response.ok) {
-                            contentDiv.innerHTML = await response.text();
-                            
-                            contentDiv.querySelectorAll('script').forEach(oldScript => {
-                                const newScript = document.createElement('script');
-                                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                                oldScript.parentNode.replaceChild(newScript, oldScript);
-                            });
-                        }
-                    } catch(e) {
-                        contentDiv.innerHTML = '<div style="padding: 20px; color: red; text-align: center;">Error loading calc.html</div>';
-                    }
+                    // Using an iframe perfectly preserves calc.html's Tailwind CSS and scripts
+                    contentDiv.innerHTML = '<iframe src="calc.html" style="width: 100%; height: 100%; border: none; background: transparent;"></iframe>';
                 }
             }
         };
