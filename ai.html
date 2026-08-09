@@ -5,19 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ClientHub CRM (Firebase Edition)</title>
   
-  <!-- 🔥 NEW: FAIL-SAFE CRASH REPORTER 🔥 -->
-  <!-- If anything breaks, this will print the exact error on your screen so we can fix it -->
+  <!-- 🔥 FAIL-SAFE CRASH REPORTER 🔥 -->
   <script>
     window.onerror = function(msg, url, line, col, error) {
       var loader = document.getElementById('fallback-loader');
       if (loader) {
-        loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 CRASH REPORT (Please send a screenshot of this):</b><br><br>' + msg + '<br>Line: ' + line + '<br><br>' + (error && error.stack ? error.stack : '') + '</div>';
+        loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 CRASH REPORT:</b><br><br>' + msg + '<br>Line: ' + line + '<br><br>' + (error && error.stack ? error.stack : '') + '</div>';
       }
     };
     window.addEventListener('unhandledrejection', function(event) {
       var loader = document.getElementById('fallback-loader');
       if (loader) {
-        loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>📡 NETWORK / DATABASE ERROR:</b><br><br>' + (event.reason ? event.reason.toString() : 'Unknown Error') + '<br><br>Make sure Anonymous Sign-in is enabled in Firebase.</div>';
+        loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>📡 NETWORK / DATABASE ERROR:</b><br><br>' + (event.reason ? event.reason.toString() : 'Unknown Error') + '</div>';
       }
     });
   </script>
@@ -25,16 +24,16 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- React & ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- React & ReactDOM (Added crossorigin to reveal exact errors) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script>window.react = window.React;</script>
   
   <!-- Babel Standalone -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
   
   <!-- Lucide React Icons -->
-  <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.min.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.min.js" crossorigin="anonymous"></script>
 
   <!-- Bulletproof Firebase Loading Sequence -->
   <script type="module">
@@ -58,7 +57,8 @@
           onSnapshot: fsMod.onSnapshot
         };
       } catch (err) {
-        throw new Error("Failed to download Firebase. Check internet connection.");
+        console.error("Critical error loading Firebase modules:", err);
+        throw err;
       }
     })();
   </script>
@@ -932,13 +932,13 @@
                     setData(clientsList);
                     setLoading(false);
                  }, (err) => {
-                    document.getElementById('fallback-loader').innerHTML = '<div style="padding:20px;color:red;"><b>Firestore Permission Denied:</b> Did you enable Anonymous Auth in Firebase Console?</div>';
+                    document.getElementById('fallback-loader').innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 Firestore Permission Denied:</b><br><br>Did you enable Anonymous Auth in your Firebase Console?</div>';
                  });
               }
             });
           } catch (e) {
              console.error(e);
-             document.getElementById('fallback-loader').innerHTML = '<div style="padding:20px;color:red;"><b>Initialization Error:</b> ' + e.message + '</div>';
+             document.getElementById('fallback-loader').innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 Initialization Error:</b><br><br>' + e.message + '</div>';
           }
         };
         
