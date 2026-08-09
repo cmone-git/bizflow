@@ -11,44 +11,78 @@
   <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
-  <!-- Polyfill for some UMD modules expecting 'react' -->
   <script>window.react = window.React;</script>
   
-  <!-- Babel Standalone (Compiles JSX in the browser) -->
+  <!-- Babel Standalone -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <!-- Lucide React Icons -->
   <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.min.js"></script>
 
-  <!-- Load Firebase via native ES Modules to prevent Babel compilation errors -->
+  <!-- Bulletproof Firebase Loading Sequence -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    
-    // Expose to window so React can access it safely
-    window.FirebaseAPI = {
-      initializeApp, getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged,
-      getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot
-    };
-    
-    // Tell the app Firebase is ready
-    window.dispatchEvent(new Event('firebase-ready'));
+    // We wrap the import in a promise attached to the window so React can safely wait for it
+    window.firebaseLoadPromise = (async () => {
+      try {
+        const appMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+        const authMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+        const fsMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        
+        window.FirebaseAPI = {
+          initializeApp: appMod.initializeApp,
+          getAuth: authMod.getAuth,
+          signInWithCustomToken: authMod.signInWithCustomToken,
+          signInAnonymously: authMod.signInAnonymously,
+          onAuthStateChanged: authMod.onAuthStateChanged,
+          getFirestore: fsMod.getFirestore,
+          collection: fsMod.collection,
+          doc: fsMod.doc,
+          addDoc: fsMod.addDoc,
+          updateDoc: fsMod.updateDoc,
+          deleteDoc: fsMod.deleteDoc,
+          onSnapshot: fsMod.onSnapshot
+        };
+      } catch (err) {
+        console.error("Critical error loading Firebase modules:", err);
+        throw err;
+      }
+    })();
   </script>
 </head>
 <body class="bg-slate-50 text-slate-800">
+  
+  <!-- Fallback UI to prevent blank screens -->
+  <div id="fallback-loader" class="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+     <div class="animate-spin w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full mb-4"></div>
+     <h2 class="text-lg font-bold text-slate-900">Starting CRM Engine...</h2>
+     <p class="text-sm text-slate-500 mt-2 max-w-md">If this screen doesn't disappear in a few seconds, please check your browser's Developer Console (F12) for syntax or connection errors.</p>
+  </div>
+
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
     
+    // Safely extract icons
     const { 
       MessageCircle, MessageSquare, Smartphone, Bot, Wand2, Loader2,
       Users, BarChart3, List, Phone, LayoutGrid, Plus, Search, X, 
       ArrowUpDown, AlertCircle, Edit3, Mail, ChevronLeft, ChevronRight, 
-      CheckCircle2, ShieldCheck, Trash2, UserPlus, Check, Copy, Sparkles
-    } = window.lucide;
+      CheckCircle2, ShieldCheck, Trash2, UserPlus, Check, Copy, Sparkles, Database
+    } = window.lucide || {};
+
+    // ==========================================
+    // 🔴 1. YOUR GITHUB DEPLOYMENT CONFIGURATION 🔴
+    // ==========================================
+    // Replace these values with your actual Firebase project settings.
+    const MY_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyCXyKSTlmlzkYnH2LW408cVVWV1CPvlfBo",
+  authDomain: "cmfilings-6a37c.firebaseapp.com",
+  projectId: "cmfilings-6a37c",
+  storageBucket: "cmfilings-6a37c.firebasestorage.app",
+  messagingSenderId: "138705123778",
+  appId: "1:138705123778:web:9561bff9f0f5d89bb6fe5b",
+  measurementId: "G-09DM4NZF8D"
 
     // Exponential backoff helper for reliable Gemini API calls
     async function fetchWithBackoff(url, options, maxRetries = 5) {
@@ -65,23 +99,22 @@
       }
     }
 
-    // 1. Main Application Component
-    function App({ data, updateItem, deleteItem, insertItem }) {
-      // Navigation & View States
-      const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'directory' | 'kanban' | 'contacts'
+    // ==========================================
+    // 2. Main Application UI Component
+    // ==========================================
+    function App({ data, updateItem, deleteItem, insertItem, isMockMode }) {
+      const [activeTab, setActiveTab] = useState('analytics'); 
       const [searchQuery, setSearchQuery] = useState('');
       const [statusFilter, setStatusFilter] = useState('ALL');
       const [branchFilter, setBranchFilter] = useState('ALL');
       const [constitutionFilter, setConstitutionFilter] = useState('ALL');
       const [taxFilter, setTaxFilter] = useState('ALL');
       
-      // Table Sorting & Pagination
       const [sortField, setSortField] = useState('clientId');
       const [sortDirection, setSortDirection] = useState('asc');
       const [currentPage, setCurrentPage] = useState(1);
       const pageSize = 15;
 
-      // Modal / Drawer States
       const [selectedClient, setSelectedClient] = useState(null);
       const [isDetailOpen, setIsDetailOpen] = useState(false);
       const [isFormOpen, setIsFormOpen] = useState(false);
@@ -90,7 +123,6 @@
       const [toastMessage, setToastMessage] = useState(null);
       const [copiedField, setCopiedField] = useState('');
 
-      // AI States
       const [isAILoading, setIsAILoading] = useState(false);
       const [aiResponse, setAiResponse] = useState('');
       const [aiInputText, setAiInputText] = useState('');
@@ -107,43 +139,27 @@
         setTimeout(() => setToastMessage(null), 3000);
       };
 
-      // Transform raw data into standardized format
       const clients = useMemo(() => {
         if (!Array.isArray(data)) return [];
         return data.map((d) => ({
-          id: d.id,
-          clientId: String(d.clientId || ''),
-          clientName: String(d.clientName || 'Unnamed Client'),
-          mobile: String(d.mobile || ''),
-          email: String(d.email || ''),
-          legalName: String(d.legalName || ''),
-          constitution: String(d.constitution || ''),
-          status: String(d.status || 'Unspecified'),
-          pan: String(d.pan || ''),
-          gstin: String(d.gstin || ''),
-          adhar: String(d.adhar || ''),
-          address: String(d.address || ''),
-          branchId: String(d.branchId || ''),
-          notes: String(d.notes || ''),
-          folderUrl: String(d.folderUrl || ''),
-          createdAt: String(d.createdAt || ''),
-          updatedAt: String(d.updatedAt || '')
+          id: d.id, clientId: String(d.clientId || ''), clientName: String(d.clientName || 'Unnamed Client'),
+          mobile: String(d.mobile || ''), email: String(d.email || ''), legalName: String(d.legalName || ''),
+          constitution: String(d.constitution || ''), status: String(d.status || 'Unspecified'),
+          pan: String(d.pan || ''), gstin: String(d.gstin || ''), adhar: String(d.adhar || ''),
+          address: String(d.address || ''), branchId: String(d.branchId || ''), notes: String(d.notes || ''),
+          folderUrl: String(d.folderUrl || ''), createdAt: String(d.createdAt || ''), updatedAt: String(d.updatedAt || '')
         }));
       }, [data]);
 
-      // Compute Auto Next Client ID
       const getNextClientId = () => {
         let maxNum = 40000;
         clients.forEach(c => {
           const num = parseInt(c.clientId.replace(/\D/g, ''), 10);
-          if (!isNaN(num) && num > maxNum) {
-            maxNum = num;
-          }
+          if (!isNaN(num) && num > maxNum) maxNum = num;
         });
         return `C${maxNum + 1}`;
       };
 
-      // Unique Options for Filters
       const branchOptions = useMemo(() => {
         const set = new Set();
         clients.forEach(c => { if (c.branchId) set.add(c.branchId); });
@@ -156,18 +172,13 @@
         return Array.from(set).sort();
       }, [clients]);
 
-      // Filtered Clients
       const filteredClients = useMemo(() => {
         return clients.filter(c => {
           if (searchQuery) {
             const q = searchQuery.toLowerCase();
-            const matchName = c.clientName.toLowerCase().includes(q);
-            const matchId = c.clientId.toLowerCase().includes(q);
-            const matchEmail = c.email.toLowerCase().includes(q);
-            const matchPan = c.pan.toLowerCase().includes(q);
-            const matchMobile = c.mobile.toLowerCase().includes(q);
-            const matchBranch = c.branchId.toLowerCase().includes(q);
-            if (!matchName && !matchId && !matchEmail && !matchPan && !matchMobile && !matchBranch) return false;
+            if (!c.clientName.toLowerCase().includes(q) && !c.clientId.toLowerCase().includes(q) && 
+                !c.email.toLowerCase().includes(q) && !c.pan.toLowerCase().includes(q) && 
+                !c.mobile.toLowerCase().includes(q) && !c.branchId.toLowerCase().includes(q)) return false;
           }
           if (statusFilter !== 'ALL') {
             if (statusFilter === 'Active' && c.status !== 'Active') return false;
@@ -190,11 +201,9 @@
         });
       }, [clients, searchQuery, statusFilter, branchFilter, constitutionFilter, taxFilter]);
 
-      // Sorted Clients
       const sortedClients = useMemo(() => {
         return [...filteredClients].sort((a, b) => {
-          let valA = a[sortField] || '';
-          let valB = b[sortField] || '';
+          let valA = a[sortField] || ''; let valB = b[sortField] || '';
           if (typeof valA === 'string') valA = valA.toLowerCase();
           if (typeof valB === 'string') valB = valB.toLowerCase();
           if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
@@ -211,22 +220,16 @@
         return sortedClients.slice(start, start + pageSize);
       }, [sortedClients, currentPage, pageSize]);
 
-      // Dashboard Aggregates
       const kpis = useMemo(() => {
         const total = clients.length;
         const active = clients.filter(c => c.status === 'Active').length;
         const withPan = clients.filter(c => c.pan && c.pan !== 'PANNOTREQD').length;
         const withGst = clients.filter(c => c.gstin && c.gstin !== 'N/A' && c.gstin !== 'null').length;
         const withContact = clients.filter(c => c.email || c.mobile).length;
-        
         return {
-          total, active,
-          activePct: total > 0 ? Math.round((active / total) * 100) : 0,
-          withPan,
-          panPct: total > 0 ? Math.round((withPan / total) * 100) : 0,
-          withGst,
-          withContact,
-          contactPct: total > 0 ? Math.round((withContact / total) * 100) : 0
+          total, active, activePct: total > 0 ? Math.round((active / total) * 100) : 0,
+          withPan, panPct: total > 0 ? Math.round((withPan / total) * 100) : 0,
+          withGst, withContact, contactPct: total > 0 ? Math.round((withContact / total) * 100) : 0
         };
       }, [clients]);
 
@@ -238,11 +241,9 @@
       const openAddModal = () => {
         setEditingClient(null);
         setFormData({
-          clientId: getNextClientId(),
-          clientName: '', mobile: '', email: '', legalName: '',
-          constitution: 'Individual', status: 'Active', pan: '',
-          gstin: '', adhar: '', address: '', branchId: branchOptions[0] || 'CMF',
-          notes: '', folderUrl: ''
+          clientId: getNextClientId(), clientName: '', mobile: '', email: '', legalName: '',
+          constitution: 'Individual', status: 'Active', pan: '', gstin: '', adhar: '',
+          address: '', branchId: branchOptions[0] || 'CMF', notes: '', folderUrl: ''
         });
         setIsFormOpen(true);
       };
@@ -257,7 +258,6 @@
       const handleFormSubmit = (e) => {
         e.preventDefault();
         if (!formData.clientName.trim()) return;
-
         if (editingClient) {
           updateItem({ ...formData, id: editingClient.id });
           showToast(`Updated client ${formData.clientId}`);
@@ -289,7 +289,6 @@
         if (!phone) return '#';
         let num = phone.replace(/\D/g, ''); 
         if (num.length === 10) num = '91' + num; 
-        
         switch (type) {
           case 'call': return `tel:+${num}`;
           case 'wa': return `https://wa.me/${num}`;
@@ -308,13 +307,7 @@
               let phone = contact.tel?.[0] || '';
               phone = phone.replace(/\D/g, '');
               if (phone.length > 10) phone = phone.slice(-10);
-
-              setFormData(prev => ({
-                ...prev,
-                clientName: contact.name?.[0] || prev.clientName,
-                mobile: phone,
-                email: contact.email?.[0] || prev.email
-              }));
+              setFormData(prev => ({ ...prev, clientName: contact.name?.[0] || prev.clientName, mobile: phone, email: contact.email?.[0] || prev.email }));
               showToast('Contact imported successfully!');
             }
           } catch (ex) { showToast('Contact selection cancelled.'); }
@@ -325,11 +318,10 @@
         if (!aiInputText.trim()) return;
         setIsAILoading(true);
         try {
-          const apiKey = ""; // Keep empty as requested
+          const apiKey = ""; // API Key injected automatically by environment, or supply your own for GitHub Pages
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
           
           const prompt = `Extract client details from the following text and return as JSON. Ignore irrelevant information: "${aiInputText}"`;
-          
           const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
@@ -337,85 +329,62 @@
               responseSchema: {
                 type: "OBJECT",
                 properties: {
-                  clientName: { type: "STRING" },
-                  mobile: { type: "STRING", description: "10 digit mobile number without country code" },
-                  email: { type: "STRING" },
-                  pan: { type: "STRING" },
-                  gstin: { type: "STRING" },
+                  clientName: { type: "STRING" }, mobile: { type: "STRING", description: "10 digit mobile number without country code" },
+                  email: { type: "STRING" }, pan: { type: "STRING" }, gstin: { type: "STRING" },
                   constitution: { type: "STRING", description: "One of: Individual, Proprietorship, Partnership, Private Limited" }
                 }
               }
             }
           };
 
-          const result = await fetchWithBackoff(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          
+          const result = await fetchWithBackoff(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const jsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
           
           if (jsonStr) {
             const parsed = JSON.parse(jsonStr);
             setFormData(prev => ({
-              ...prev,
-              clientName: parsed.clientName || prev.clientName,
-              mobile: parsed.mobile || prev.mobile,
-              email: parsed.email || prev.email,
-              pan: parsed.pan || prev.pan,
-              gstin: parsed.gstin || prev.gstin,
-              constitution: parsed.constitution || prev.constitution
+              ...prev, clientName: parsed.clientName || prev.clientName, mobile: parsed.mobile || prev.mobile,
+              email: parsed.email || prev.email, pan: parsed.pan || prev.pan, gstin: parsed.gstin || prev.gstin, constitution: parsed.constitution || prev.constitution
             }));
             showToast("AI Autofill applied successfully!");
-            setShowAIInput(false);
-            setAiInputText('');
+            setShowAIInput(false); setAiInputText('');
           } else { showToast("Could not extract details."); }
-        } catch (err) {
-          console.error("AI Autofill Error:", err);
-          showToast("AI Autofill failed.");
-        } finally { setIsAILoading(false); }
+        } catch (err) { console.error("AI Autofill Error:", err); showToast("AI Autofill failed. Ensure API key is configured."); } finally { setIsAILoading(false); }
       };
 
       const draftEmailWithAI = async (client, type) => {
-        setIsAILoading(true);
-        setAiResponse('');
+        setIsAILoading(true); setAiResponse('');
         try {
-          const apiKey = ""; // Keep empty as requested
+          const apiKey = ""; // API Key injected automatically by environment, or supply your own for GitHub Pages
           const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
           
           let prompt = `Act as a professional CRM assistant. Write a short, polite email to a client named ${client.clientName}. `;
-          if (type === 'missing_tax') {
-            prompt += `They are missing their PAN card or GSTIN on file (PAN: ${client.pan || 'Missing'}, GSTIN: ${client.gstin || 'Missing'}). Request them to share it at their earliest convenience.`;
-          } else if (type === 'check_in') {
-            prompt += `Just checking in to see if they need any assistance with our services.`;
-          }
+          if (type === 'missing_tax') prompt += `They are missing their PAN card or GSTIN on file (PAN: ${client.pan || 'Missing'}, GSTIN: ${client.gstin || 'Missing'}). Request them to share it at their earliest convenience.`;
+          else if (type === 'check_in') prompt += `Just checking in to see if they need any assistance with our services.`;
 
           const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             systemInstruction: { parts: [{ text: "You are a professional assistant. Output only the email body without subject line or placeholder brackets." }] }
           };
 
-          const result = await fetchWithBackoff(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          
+          const result = await fetchWithBackoff(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
           
-          if (text) {
-            setAiResponse(text);
-          } else { showToast("Failed to generate draft."); }
-        } catch (err) {
-          console.error("AI Draft Error:", err);
-          showToast("AI Drafting failed.");
-        } finally { setIsAILoading(false); }
+          if (text) setAiResponse(text); else showToast("Failed to generate draft.");
+        } catch (err) { console.error("AI Draft Error:", err); showToast("AI Drafting failed. Ensure API key is configured."); } finally { setIsAILoading(false); }
       };
 
       return (
         <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased pb-24 md:pb-12">
-          {/* Toast Banner */}
+          
+          {/* Mock Mode Warning Banner for GitHub deployments without config */}
+          {isMockMode && (
+             <div className="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-center items-center gap-2">
+                <Database className="w-4 h-4" /> 
+                Running in Demo Mode. To save data, add your Firebase config in index.html (Lines 44-51).
+             </div>
+          )}
+
           {toastMessage && (
             <div className="fixed top-5 left-1/2 -translate-x-1/2 md:bottom-5 md:top-auto md:right-5 md:left-auto md:translate-x-0 z-[60] flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl text-sm border border-slate-700 w-11/12 md:w-auto max-w-sm">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -423,7 +392,6 @@
             </div>
           )}
 
-          {/* Main Navigation Header */}
           <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
@@ -455,7 +423,6 @@
           </header>
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-            {/* TAB 1: ANALYTICS DASHBOARD */}
             {activeTab === 'analytics' && (
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -512,7 +479,6 @@
               </div>
             )}
 
-            {/* TAB 2: CLIENT DIRECTORY TABLE */}
             {activeTab === 'directory' && (
               <div className="space-y-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
@@ -625,7 +591,6 @@
               </div>
             )}
 
-            {/* TAB 3: CONTACTS ROLODEX */}
             {activeTab === 'contacts' && (
               <div className="space-y-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm sticky top-16 z-20">
@@ -662,7 +627,6 @@
               </div>
             )}
 
-            {/* TAB 4: KANBAN */}
             {activeTab === 'kanban' && (
               <div className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-x-auto pb-4">
@@ -703,10 +667,8 @@
                  </div>
               </div>
             )}
-
           </main>
 
-          {/* Bottom Mobile Navigation */}
           <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-around items-center pt-1 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-500'}`}><BarChart3 className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">Dash</span></button>
             <button onClick={() => setActiveTab('directory')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'directory' ? 'text-indigo-600' : 'text-slate-500'}`}><List className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">List</span></button>
@@ -717,7 +679,7 @@
             <button onClick={() => setActiveTab('kanban')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'kanban' ? 'text-indigo-600' : 'text-slate-500'}`}><LayoutGrid className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">Board</span></button>
           </div>
 
-          {/* Client Details Drawer */}
+          {/* Drawers and Modals (Detail, Edit/Add, Delete) */}
           {isDetailOpen && selectedClient && (
             <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm flex justify-end">
               <div className="w-full max-w-md bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col justify-between animate-in slide-in-from-right duration-300">
@@ -746,7 +708,6 @@
                     <div className="flex items-center justify-between pt-1"><span className="text-slate-500">Email:</span><div className="font-medium text-slate-900">{selectedClient.email || 'N/A'}</div></div>
                   </div>
                   
-                  {/* Gemini AI Widget */}
                   <div>
                     <h4 className="text-[11px] font-bold flex items-center gap-1.5 text-fuchsia-600 uppercase tracking-wider mb-2">
                       <Bot className="w-3.5 h-3.5" /> Gemini AI Assistant
@@ -799,7 +760,6 @@
             </div>
           )}
 
-          {/* Add / Edit Client Modal */}
           {isFormOpen && (
             <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
               <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 mt-10 mb-20 sm:my-auto">
@@ -820,7 +780,6 @@
                     <button type="button" onClick={handleImportContact} className="w-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 py-3 rounded-xl border border-indigo-200 font-bold mb-4 cursor-pointer hover:bg-indigo-100"><Smartphone className="w-4 h-4" /> Import from Phone</button>
                   )}
                   
-                  {/* Gemini Magic Autofill */}
                   <button type="button" onClick={() => setShowAIInput(!showAIInput)} className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-50 to-fuchsia-50 text-fuchsia-700 py-3 rounded-xl border border-fuchsia-200 font-bold mb-4 shadow-sm hover:bg-fuchsia-100 transition-colors cursor-pointer">
                      <Sparkles className="w-4 h-4" /> Magic Autofill with Gemini AI
                   </button>
@@ -828,16 +787,10 @@
                   {showAIInput && (
                     <div className="bg-fuchsia-50/50 p-3 rounded-xl border border-fuchsia-100 mb-4 space-y-2">
                       <label className="block text-[10px] font-bold text-fuchsia-800 uppercase">Paste Unstructured Text</label>
-                      <textarea 
-                        value={aiInputText} 
-                        onChange={(e) => setAiInputText(e.target.value)}
-                        placeholder="e.g. Add John Smith from Acme Corp, phone 9998887777, email john@acme.com, GSTIN 29ABCDE1234F1Z5"
-                        className="w-full p-2.5 text-xs border border-fuchsia-200 rounded-lg focus:ring-2 focus:ring-fuchsia-500 bg-white min-h-[60px] outline-none"
-                      />
+                      <textarea value={aiInputText} onChange={(e) => setAiInputText(e.target.value)} placeholder="e.g. Add John Smith from Acme Corp, phone 9998887777, email john@acme.com, GSTIN 29ABCDE1234F1Z5" className="w-full p-2.5 text-xs border border-fuchsia-200 rounded-lg focus:ring-2 focus:ring-fuchsia-500 bg-white min-h-[60px] outline-none" />
                       <div className="flex justify-end">
                         <button type="button" onClick={handleAIAutofill} disabled={isAILoading} className="bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
-                          {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                          Process Text
+                          {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} Process Text
                         </button>
                       </div>
                     </div>
@@ -892,7 +845,6 @@
             </div>
           )}
 
-          {/* Delete Confirmation Modal */}
           {deleteCandidate && (
             <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
@@ -909,13 +861,22 @@
       );
     }
 
-    // 2. Firebase App Wrapper & Integrator
+    // ==========================================
+    // 3. Database & Firebase Initializer
+    // ==========================================
     function FirebaseAppWrapper() {
       const [data, setData] = useState([]);
       const [loading, setLoading] = useState(true);
       const [user, setUser] = useState(null);
       const [error, setError] = useState(null);
       const [fb, setFb] = useState(null); 
+      const [isMockMode, setIsMockMode] = useState(false);
+
+      // Hide the raw HTML loader once React takes over
+      useEffect(() => {
+        const rawLoader = document.getElementById('fallback-loader');
+        if (rawLoader) rawLoader.style.display = 'none';
+      }, []);
 
       useEffect(() => {
         let unsubscribeAuth = null;
@@ -923,32 +884,27 @@
 
         const initFirebase = async () => {
           try {
+            // 1. Wait for Firebase scripts to finish downloading
+            await window.firebaseLoadPromise;
             const FB = window.FirebaseAPI;
-            if (!FB) throw new Error("Firebase SDK failed to load");
-
-            // Safely parse injected configuration
-            let config = {};
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-               try {
-                  config = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-               } catch (e) {
-                  console.warn("Failed to parse injected Firebase config. Falling back to mock data.");
-               }
-            }
             
-            // Allow mock fallback if no configuration is found
-            if (Object.keys(config).length === 0) {
-                console.warn("Initializing with temporary mock data (No Firebase config provided).");
+            // 2. Decide if we are using Real config or Mock Data
+            // We check if the user actually pasted their API key in MY_FIREBASE_CONFIG
+            let config = MY_FIREBASE_CONFIG;
+            
+            if (!config || !config.apiKey || config.apiKey === "YOUR_API_KEY") {
+                console.warn("No valid Firebase config provided. Falling back to Demo Mode.");
                 setFb({ isMock: true });
+                setIsMockMode(true);
                 setData([
-                  { id: '1', clientId: 'C40001', clientName: 'Acme Corporation Ltd', mobile: '9876543210', email: 'admin@acme.test', constitution: 'Private Limited', status: 'Active', pan: 'ABCDE1234F', gstin: '29ABCDE1234F1Z5', branchId: 'HQ' },
+                  { id: '1', clientId: 'C40001', clientName: 'Demo Client (Acme Corp)', mobile: '9876543210', email: 'admin@acme.test', constitution: 'Private Limited', status: 'Active', pan: 'ABCDE1234F', gstin: '29ABCDE1234F1Z5', branchId: 'HQ' },
                   { id: '2', clientId: 'C40002', clientName: 'John Doe Enterprises', mobile: '9998887776', email: 'johndoe@test.com', constitution: 'Proprietorship', status: 'Unspecified', pan: 'PANNOTREQD', gstin: 'N/A', branchId: 'CMF' }
                 ]);
                 setLoading(false);
                 return;
             }
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const appId = config.appId || 'default-crm-app';
             const app = FB.initializeApp(config);
             const auth = FB.getAuth(app);
             const db = FB.getFirestore(app);
@@ -959,43 +915,31 @@
                deleteDoc: FB.deleteDoc, collection: FB.collection, doc: FB.doc
             });
 
-            // Mandatory Rule: Auth flow MUST complete first
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await FB.signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await FB.signInAnonymously(auth);
-            }
+            // 3. Connect Authentication
+            await FB.signInAnonymously(auth);
 
-            // Listen to secure auth state
+            // 4. Securely fetch data
             unsubscribeAuth = FB.onAuthStateChanged(auth, (currentUser) => {
               setUser(currentUser);
               if (currentUser) {
-                 // Mandatory Rule: Strict Private Data Path
                  const collRef = FB.collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clients');
-                 
                  unsubscribeSnap = FB.onSnapshot(collRef, (snapshot) => {
                     const clientsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     setData(clientsList);
                     setLoading(false);
                  }, (err) => {
-                    setError("Database stream error: " + err.message);
+                    setError(`Firestore Permission Denied. Did you enable Anonymous Auth in Firebase Console? Details: ${err.message}`);
                     setLoading(false);
                  });
               }
             });
           } catch (e) {
-             setError(e.message);
+             setError(e.message || "Unknown error initializing Firebase.");
              setLoading(false);
           }
         };
         
-        // Wait for native ES Modules to load Firebase before initiating React state
-        if (window.FirebaseAPI) {
-           initFirebase();
-        } else {
-           window.addEventListener('firebase-ready', initFirebase);
-           return () => window.removeEventListener('firebase-ready', initFirebase);
-        }
+        initFirebase();
 
         return () => {
            if (unsubscribeAuth) unsubscribeAuth();
@@ -1003,12 +947,8 @@
         };
       }, []);
 
-      // Real-time Firestore Database Helpers
       const insertItem = async (clientData) => {
-         if (fb?.isMock) {
-            setData(prev => [...prev, { ...clientData, id: Date.now().toString() }]);
-            return;
-         }
+         if (fb?.isMock) { setData(prev => [...prev, { ...clientData, id: Date.now().toString() }]); return; }
          if (!fb || !user) return;
          try {
              const collRef = fb.collection(fb.db, 'artifacts', fb.appId, 'users', user.uid, 'clients');
@@ -1017,10 +957,7 @@
       };
       
       const updateItem = async (clientData) => {
-         if (fb?.isMock) {
-            setData(prev => prev.map(c => c.id === clientData.id ? clientData : c));
-            return;
-         }
+         if (fb?.isMock) { setData(prev => prev.map(c => c.id === clientData.id ? clientData : c)); return; }
          if (!fb || !user) return;
          try {
              const { id, ...dataToUpdate } = clientData;
@@ -1031,10 +968,7 @@
       };
       
       const deleteItem = async (id) => {
-         if (fb?.isMock) {
-            setData(prev => prev.filter(c => c.id !== id));
-            return;
-         }
+         if (fb?.isMock) { setData(prev => prev.filter(c => c.id !== id)); return; }
          if (!fb || !user) return;
          try {
              const docRef = fb.doc(fb.db, 'artifacts', fb.appId, 'users', user.uid, 'clients', id);
@@ -1044,10 +978,14 @@
 
       if (error) {
         return (
-           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4 p-4 text-center">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-2"><AlertCircle className="w-6 h-6" /></div>
-              <div className="text-slate-900 font-bold text-xl">Database Connection Error</div>
-              <p className="text-slate-500 text-sm max-w-md">{error}</p>
+           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4 p-6 text-center">
+              <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-2 shadow-sm border border-rose-200">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div className="text-slate-900 font-extrabold text-2xl">Configuration Error</div>
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 max-w-lg text-left text-sm text-slate-700 font-mono">
+                 {error}
+              </div>
            </div>
         );
       }
@@ -1061,10 +999,9 @@
         );
       }
 
-      return <App data={data} insertItem={insertItem} updateItem={updateItem} deleteItem={deleteItem} />;
+      return <App data={data} insertItem={insertItem} updateItem={updateItem} deleteItem={deleteItem} isMockMode={isMockMode} />;
     }
 
-    // 3. Mount Application
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<FirebaseAppWrapper />);
   </script>
