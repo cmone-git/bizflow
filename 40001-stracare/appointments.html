@@ -53,7 +53,6 @@
 
         #appointment-module .table-container { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px; }
         
-        /* Native Horizontal Scroll Table for Mobile */
         #appointment-module .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         #appointment-module .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
         #appointment-module .saas-table { width: 100%; min-width: 950px; border-collapse: collapse; text-align: left; }
@@ -75,7 +74,6 @@
         #reschedule-container.active, #bulk-reschedule-container.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Notes Modal Styles */
         .notes-modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
         .notes-modal-content { background: white; width: 100%; max-width: 600px; border-radius: 12px; padding: 24px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .notes-modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
@@ -103,11 +101,11 @@
             
             <h4 style="color: var(--primary); margin: 0 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px;">1. Patient Details</h4>
             
-            <!-- SEARCH / AUTO-FILL COMPONENT -->
+            <!-- FIXED: Dropdown shows Name, but selects the underlying Mobile Number to pull accurate data -->
             <div class="input-group" style="margin-bottom: 16px;">
                 <div style="grid-column: 1 / -1;">
                     <label class="form-label" style="color: var(--primary);">Select / Search Patient (Auto-fills details below) ▼</label>
-                    <input list="patients-datalist" id="aptPatientSearch" class="form-input" placeholder="Search Patient Name or Mobile" onchange="window.handlePatientSelect()" autocomplete="off" style="border-color: var(--primary); background: var(--primary-light);">
+                    <input list="patients-datalist" id="aptPatientSearch" class="form-input" placeholder="Search by Patient Name" onchange="window.handlePatientSelect()" autocomplete="off" style="border-color: var(--primary); background: var(--primary-light);">
                     <datalist id="patients-datalist"></datalist>
                 </div>
             </div>
@@ -332,24 +330,19 @@
     </div>
 
 <script type="module">
-        // 1. Import from your central config instead of re-initializing Firebase
         import { auth, db } from './firebase-config.js'; 
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Make deleteDoc globally accessible for the bulk delete function
         window.deleteDoc = deleteDoc;
         window.doc = doc;
 
         window.appointmentsDataCache = {};
         window.allBranchesString = "";
-        window.allPatientsCache = {}; // Cache for the dropdown feature
+        window.allPatientsCache = {}; 
 
-// --- AUTHENTICATION GATEKEEPER ---
-        // This ensures the page content only loads if a valid user session exists
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                // User is NOT logged in. Destroy the module content and show a warning.
                 document.getElementById('appointment-module').innerHTML = `
                     <div style="text-align: center; padding: 60px 20px; background: #FEF2F2; border-radius: 16px; border: 1px solid #FCA5A5; margin-top: 20px;">
                         <span class="material-symbols-rounded" style="font-size: 48px; color: #EF4444; margin-bottom: 12px;">gpp_bad</span>
@@ -357,17 +350,14 @@
                         <p style="color: #7F1D1D; font-size: 14px;">You must be logged into the administrative dashboard to view this module.</p>
                     </div>
                 `;
-                return; // Stop execution
+                return; 
             }
 
-            // --- NEW: HIDE DELETE BUTTON IF NOT ADMIN ---
             if (window.currentUser && window.currentUser.role !== 'admin') {
                 const bulkDeleteBtn = document.querySelector('button[onclick="window.executeBulkDelete()"]');
                 if(bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
             }
-            // --------------------------------------------
 
-            // User IS logged in. Proceed with bootstrapping the module.
             window.loadPatientsForApt(); 
             window.loadBranchesForApt();
             window.loadTherapistsForApt();
@@ -400,7 +390,6 @@
             if(rescheduleDateEl) rescheduleDateEl.min = dateStr;
         }
 
-        // --- LOCATION HELPERS ---
         window.openLocationMap = function() {
             const loc = document.getElementById('aptLocation').value;
             if(!loc) return alert("Please paste a location link or address first.");
@@ -421,7 +410,7 @@
                     document.getElementById('aptLocation').value = `https://www.google.com/maps?q=${lat},${lon}`;
                     btn.innerHTML = oldText;
                 }, function(error) {
-                    alert("Error getting location. Please ensure location services are enabled.");
+                    alert("Error getting location.");
                     btn.innerHTML = oldText;
                 });
             } else {
@@ -429,17 +418,13 @@
             }
         }
 
-// --- 0. SAFE DYNAMIC LOADERS ---
         window.loadPatientsForApt = async function() {
             const dataList = document.getElementById('patients-datalist');
             if(!dataList) return;
             try {
-                // NEW: Apply branch filter if the user is not an admin
-                let q;
+                let q = query(collection(db, "patients"));
                 if (window.currentUser && window.currentUser.role !== 'admin') {
                     q = query(collection(db, "patients"), where("branch", "==", window.currentUser.branch));
-                } else {
-                    q = query(collection(db, "patients"));
                 }
                 
                 const snap = await getDocs(q);
@@ -447,15 +432,13 @@
                 snap.forEach(doc => {
                     const p = doc.data();
                     if(p.name && p.mobile) {
-                        const label = `${p.name} - ${p.mobile}`;
-                        window.allPatientsCache[label] = p;
-                        html += `<option value="${label}">`;
+                        // Display name to the user, but pass mobile as the hidden selected value
+                        window.allPatientsCache[p.mobile] = p;
+                        html += `<option value="${p.mobile}">${p.name} (${p.mobile})</option>`;
                     }
                 });
                 dataList.innerHTML = html;
-            } catch(e) {
-                console.error("Error dynamically loading patients: ", e);
-            }
+            } catch(e) { console.error(e); }
         };
 
         window.loadBranchesForApt = async function() {
@@ -477,10 +460,7 @@
             try {
                 const snap = await getDocs(collection(db, "branches"));
                 let branchList = [];
-                snap.forEach(doc => {
-                    const bName = doc.data().name;
-                    if(bName) branchList.push(bName);
-                });
+                snap.forEach(doc => { if(doc.data().name) branchList.push(doc.data().name); });
                 branchList.sort();
                 
                 window.allBranchesString = branchList.join(" | ");
@@ -494,40 +474,29 @@
                 
                 branchSelect.innerHTML = bHtml;
                 filterSelect.innerHTML = fHtml;
-            } catch(e) {
-                branchSelect.innerHTML = '<option value="">Select Branch</option>';
-            }
+            } catch(e) { branchSelect.innerHTML = '<option value="">Select Branch</option>'; }
         };
 
-            window.loadTherapistsForApt = async function() {
-                const dataList = document.getElementById('therapists-datalist');
-                if(!dataList) return;
-                try {
-                // NEW: Apply branch filter if the user is not an admin
-                let q;
+        window.loadTherapistsForApt = async function() {
+            const dataList = document.getElementById('therapists-datalist');
+            if(!dataList) return;
+            try {
+                let q = query(collection(db, "therapists"));
                 if (window.currentUser && window.currentUser.role !== 'admin') {
                     q = query(collection(db, "therapists"), where("branch", "==", window.currentUser.branch));
-                } else {
-                    q = query(collection(db, "therapists"));
                 }
 
                 const snap = await getDocs(q);
                 let thList = [];
-                snap.forEach(doc => { 
-                    const tName = doc.data().name;
-                    if(tName) thList.push(tName); 
-                });
+                snap.forEach(doc => { if(doc.data().name) thList.push(doc.data().name); });
                 thList.sort();
 
                 let html = '';
                 thList.forEach(tName => html += `<option value="${tName}">`);
                 dataList.innerHTML = html;
-            } catch(e) {
-                console.error("Error loading therapists: ", e);
-            }
+            } catch(e) { console.error(e); }
         };
 
-        // --- 1. FORM UI LOGIC ---
         window.toggleReschedule = function(select) {
             const container = document.getElementById('reschedule-container');
             if (select.value === 'Rescheduled') container.classList.add('active');
@@ -564,32 +533,28 @@
 
         function isPastDateTime(dateStr, timeStr) {
             if(!dateStr) return false;
-            
             const targetParts = dateStr.split('-');
             const year = parseInt(targetParts[0]);
             const month = parseInt(targetParts[1]) - 1;
             const day = parseInt(targetParts[2]);
-            
             let hours = 0, minutes = 0;
             if(timeStr) {
                 const timeParts = timeStr.split(':');
                 hours = parseInt(timeParts[0]);
                 minutes = parseInt(timeParts[1]);
             }
-            
-            const target = new Date(year, month, day, hours, minutes);
-            const now = new Date();
-            
-            return target < now;
+            return new Date(year, month, day, hours, minutes) < new Date();
         }
 
-        // --- 2. AUTO-FILL PATIENT & OP BALANCE ---
+        // --- FIXED: AUTO-FILL PATIENT BY MOBILE NUMBER ---
         window.handlePatientSelect = async function() {
-            const searchVal = document.getElementById('aptPatientSearch').value;
-            const pData = window.allPatientsCache[searchVal];
+            const selectedMobile = document.getElementById('aptPatientSearch').value;
+            const pData = window.allPatientsCache[selectedMobile];
             
             if (pData) {
-                // Auto-fill all standard inputs
+                // Clear the search bar to keep the UI clean after selection
+                document.getElementById('aptPatientSearch').value = pData.name;
+                
                 document.getElementById('aptName').value = pData.name || '';
                 document.getElementById('aptMobile').value = pData.mobile || '';
                 document.getElementById('aptAge').value = pData.age || '';
@@ -597,16 +562,20 @@
                 document.getElementById('aptLocation').value = pData.location || '';
                 document.getElementById('aptPatientNotes').value = pData.notes || '';
                 
-                // Pre-fill branch if recorded
                 if(pData.branch) {
                     document.getElementById('aptBranch').value = pData.branch;
                 }
 
-                // Check and calculate previous dues (OP Balance) automatically
                 let opBalance = 0;
                 const currentDocId = document.getElementById('aptDocId').value;
                 try {
-                    const aptsSnap = await getDocs(query(collection(db, "appointments"), where("mobile", "==", pData.mobile)));
+                    // SECURE: Filter OP balance fetching by branch for non-admins
+                    let aptsQ = query(collection(db, "appointments"), where("mobile", "==", pData.mobile));
+                    if (window.currentUser && window.currentUser.role !== 'admin') {
+                        aptsQ = query(collection(db, "appointments"), where("mobile", "==", pData.mobile), where("branch", "==", window.currentUser.branch));
+                    }
+                    
+                    const aptsSnap = await getDocs(aptsQ);
                     aptsSnap.forEach(doc => {
                         if (doc.id !== currentDocId) {
                             opBalance += parseFloat(doc.data().balance) || 0;
@@ -618,7 +587,6 @@
             }
         };
 
-        // --- 3. LOAD APPOINTMENTS (DOCTOR-WISE GROUPING) ---
         window.loadAppointments = async function() {
             const tableBody = document.getElementById('aptTableBody');
             tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Loading appointments...</td></tr>';
@@ -735,9 +703,7 @@
                         tableBody.appendChild(tr);
                     });
                 });
-            } catch (error) {
-                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--danger);">Error loading data. Check Firestore rules.</td></tr>';
-            }
+            } catch (error) { tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: var(--danger);">Error loading data. Check Firestore rules.</td></tr>'; }
         };
 
         window.setFilterToday = function() {
@@ -746,13 +712,11 @@
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             const todayStr = `${yyyy}-${mm}-${dd}`;
-            
             document.getElementById("filterDateFrom").value = todayStr;
             document.getElementById("filterDateTo").value = todayStr;
             window.filterTable();
         }
 
-        // --- NOTES MODAL LOGIC ---
         window.viewNotes = function(docId) {
             const data = window.appointmentsDataCache[docId];
             if(!data) return;
@@ -782,7 +746,6 @@
             win.document.close();
         };
 
-        // --- 4. ADVANCED TABLE FILTERING (WITH FROM/TO DATE) ---
         window.filterTable = function() {
             const branchQuery = document.getElementById("filterBranch").value.toLowerCase();
             const statusQuery = document.getElementById("filterStatus").value.toLowerCase();
@@ -793,15 +756,12 @@
             const textQuery = document.getElementById("aptSearchInput").value.toLowerCase();
 
             const trs = document.getElementById("aptTableBody").getElementsByTagName("tr");
-            
             let currentTherapistHeader = null;
             let visibleInGroup = 0;
 
             for (let i = 0; i < trs.length; i++) {
                 if (trs[i].classList.contains('therapist-group-header')) {
-                    if (currentTherapistHeader && visibleInGroup === 0) {
-                        currentTherapistHeader.style.display = "none";
-                    }
+                    if (currentTherapistHeader && visibleInGroup === 0) currentTherapistHeader.style.display = "none";
                     currentTherapistHeader = trs[i];
                     visibleInGroup = 0;
                     currentTherapistHeader.style.display = ""; 
@@ -827,23 +787,14 @@
                 if (paymentQuery === "paid" && rowBalance > 0) show = false;
                 if (textQuery && rowSearch.indexOf(textQuery) === -1) show = false;
 
-                if(show) {
-                    trs[i].style.display = "";
-                    visibleInGroup++;
-                } else {
-                    trs[i].style.display = "none";
-                }
+                if(show) { trs[i].style.display = ""; visibleInGroup++; } 
+                else { trs[i].style.display = "none"; }
             }
-            
-            if (currentTherapistHeader && visibleInGroup === 0) {
-                currentTherapistHeader.style.display = "none";
-            }
+            if (currentTherapistHeader && visibleInGroup === 0) currentTherapistHeader.style.display = "none";
         }
 
         window.clearFilters = function() {
-            if (window.currentUser && window.currentUser.role === 'admin') {
-                document.getElementById("filterBranch").value = "";
-            }
+            if (window.currentUser && window.currentUser.role === 'admin') document.getElementById("filterBranch").value = "";
             document.getElementById("filterStatus").value = "";
             document.getElementById("filterCategory").value = "";
             document.getElementById("filterPayment").value = "";
@@ -853,7 +804,6 @@
             window.filterTable();
         }
 
-        // --- 5. EDIT APPOINTMENT ---
         window.editAppointment = async function(docId) {
             const data = window.appointmentsDataCache[docId];
             if(!data) return;
@@ -877,7 +827,12 @@
             document.getElementById('aptNotes').value = data.notes || '';
 
             let opBalance = 0;
-            const aptsSnap = await getDocs(query(collection(db, "appointments"), where("mobile", "==", data.mobile)));
+            // SECURE: Filter OP balance fetching by branch for non-admins when editing
+            let aptsQ = query(collection(db, "appointments"), where("mobile", "==", data.mobile));
+            if (window.currentUser && window.currentUser.role !== 'admin') {
+                aptsQ = query(collection(db, "appointments"), where("mobile", "==", data.mobile), where("branch", "==", window.currentUser.branch));
+            }
+            const aptsSnap = await getDocs(aptsQ);
             aptsSnap.forEach(d => {
                 if (d.id !== docId) opBalance += parseFloat(d.data().balance) || 0;
             });
@@ -892,7 +847,6 @@
             else window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- 6. BULK ACTIONS (COPY / DELETE) ---
         window.toggleAllCheckboxes = function(masterCheckbox) {
             const checkboxes = document.querySelectorAll('.apt-row:not([style*="display: none"]) .apt-checkbox');
             checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
@@ -940,18 +894,13 @@
                         createdAt: new Date(),
                         updatedAt: new Date()
                     };
-
                     await addDoc(collection(db, "appointments"), newAppointment);
                 }
-                
                 alert(`Successfully copied ${checkboxes.length} appointments to ${window.formatIndianDate(newDate)}!`);
                 document.getElementById('bulk-reschedule-container').classList.remove('active');
                 document.getElementById('bulkDateInput').value = ""; 
                 window.loadAppointments(); 
-
-            } catch(e) {
-                alert("Failed to perform bulk copy.");
-            }
+            } catch(e) { alert("Failed to perform bulk copy."); }
         }
 
         window.executeBulkDelete = async function() {
@@ -973,18 +922,19 @@
                     await window.deleteDoc(window.doc(db, "appointments", cb.value));
                     deletedCount++;
                 }
-                
                 alert(`Successfully deleted ${deletedCount} appointments.`);
                 window.loadAppointments(); 
-            } catch(e) {
-                console.error(e);
-                alert("Error deleting appointments. Check permissions.");
-            }
+            } catch(e) { console.error(e); alert("Error deleting appointments. Check permissions."); }
         }
 
-        // --- 7. AUTO-TRANSACTIONS ENGINE ---
+        // --- FIXED SECURE AUTO-TRANSACTIONS ENGINE ---
         window.syncTransactions = async function(aptId, payload) {
-            const tSnap = await getDocs(query(collection(db, "transactions"), where("linkedAptId", "==", aptId)));
+            let tQ = query(collection(db, "transactions"), where("linkedAptId", "==", aptId));
+            if (window.currentUser && window.currentUser.role !== 'admin') {
+                tQ = query(collection(db, "transactions"), where("linkedAptId", "==", aptId), where("branch", "==", window.currentUser.branch));
+            }
+
+            const tSnap = await getDocs(tQ);
             let salesDoc = null;
             let receiptDoc = null;
             tSnap.forEach(d => {
@@ -1005,7 +955,6 @@
             }
         }
 
-        // --- 8. SAVE APPOINTMENT + AUTO-PATIENTS ---
         window.saveAppointment = async function() {
             const saveBtn = document.getElementById('saveAptBtn');
             const docId = document.getElementById('aptDocId').value; 
@@ -1057,7 +1006,13 @@
             };
 
             try {
-                const pSnap = await getDocs(query(collection(db, "patients"), where("mobile", "==", mobile)));
+                // SECURE: Filter Patient Fetching
+                let pQ = query(collection(db, "patients"), where("mobile", "==", mobile));
+                if (window.currentUser && window.currentUser.role !== 'admin') {
+                    pQ = query(collection(db, "patients"), where("mobile", "==", mobile), where("branch", "==", window.currentUser.branch));
+                }
+
+                const pSnap = await getDocs(pQ);
                 if (pSnap.empty) {
                     const genId = "P" + Math.floor(Math.random() * 90000 + 10000);
                     await addDoc(collection(db, "patients"), { patientId: genId, mobile: mobile, name: name, age: age, category: category, location: location, notes: patientNotes, branch: branch, createdAt: new Date() });
@@ -1083,6 +1038,7 @@
                 window.loadAppointments();
 
             } catch (error) {
+                console.error(error);
                 alert("Failed to save appointment. Check your database permissions.");
             }
 
@@ -1090,7 +1046,6 @@
             saveBtn.disabled = false;
         }
 
-        // --- 9. INVOICE PRINTING (WITH OP BALANCE LOGIC) ---
         window.printInvoice = function(name, mobile, indDate, branch, fee, advance, balance, prevDues) {
             fee = parseFloat(fee) || 0;
             advance = parseFloat(advance) || 0;
