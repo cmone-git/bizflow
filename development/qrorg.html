@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPI QR Generator</title>
+</head>
+<body>
+
+<div class="module-container" id="upi-qr-module">
+    
+    <style>
+        #upi-qr-module { font-family: 'Inter', sans-serif; width: 100%; max-width: 1120px; margin: 0 auto; padding-bottom: 40px;}
+        
+        #upi-qr-module .section-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--text-main); display: flex; align-items: center; gap: 8px;}
+        
+        #upi-qr-module .grid-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        @media (min-width: 992px) { #upi-qr-module .grid-layout { grid-template-columns: 1fr 1fr; } }
+
+        #upi-qr-module .card { background: var(--surface); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+        #upi-qr-module .form-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        #upi-qr-module .form-input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); font-size: 14px; color: var(--text-main); background: #FAFAFA; outline: none; transition: border 0.2s; margin-bottom: 16px;}
+        #upi-qr-module .form-input:focus { border-color: var(--primary); background: var(--surface); }
+        
+        #upi-qr-module .btn-primary { background: var(--primary); color: white; border: none; padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;}
+        #upi-qr-module .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        
+        #upi-qr-module .btn-outline { background: var(--surface); color: var(--text-main); border: 1px solid var(--border); padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;}
+        #upi-qr-module .btn-outline:hover { background: #FAFAFA; border-color: var(--primary); color: var(--primary); }
+
+        .qr-preview-container { background: #F8FAFC; border: 2px dashed var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; text-align: center; }
+        
+        /* The Canvas where the QR Receipt is drawn */
+        #compositeCanvas { max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; background: white; }
+        
+        .action-buttons { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; width: 100%;}
+        @media (max-width: 600px) { .action-buttons { grid-template-columns: 1fr; } }
+    </style>
+
+    <div class="section-title">
+        <span class="material-symbols-rounded" style="font-size: 28px; color: var(--primary);">qr_code_scanner</span>
+        Generate Payment QR
+    </div>
+
+    <div class="grid-layout">
+        <!-- LEFT: FORM -->
+        <div class="card">
+            <h3 style="margin: 0 0 20px 0; color: var(--text-main); font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">Payment Details</h3>
+            
+            <label class="form-label">Select Patient (Auto-fills Pending Dues) *</label>
+            <input list="qr-patients-datalist" id="qrPatientSearch" class="form-input" placeholder="Search Patient Name or Mobile..." onchange="window.handleQRPatientSelect()" autocomplete="off">
+            <datalist id="qr-patients-datalist"></datalist>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label class="form-label">Patient Mobile</label>
+                    <input type="tel" id="qrMobile" class="form-input" placeholder="10-digit number" readonly style="background: #E2E8F0; cursor: not-allowed;">
+                </div>
+                <div>
+                    <label class="form-label">Amount (₹) *</label>
+                    <input type="number" id="qrAmount" class="form-input" placeholder="0.00" style="font-weight: 700; color: var(--primary);">
+                </div>
+            </div>
+
+            <label class="form-label">Narration / Remarks</label>
+            <input type="text" id="qrNarration" class="form-input" placeholder="e.g., Consultation Fee, Therapy Due..." value="Clinic Payment">
+
+            <label class="form-label">Clinic UPI ID (Default)</label>
+            <input type="text" id="qrUpiId" class="form-input" value="9744902555@hdfc">
+            
+            <label class="form-label">Payee Name (Default)</label>
+            <input type="text" id="qrPayeeName" class="form-input" value="STRA CARE">
+
+            <button type="button" class="btn-primary" onclick="window.generateUPIQR()" style="margin-top: 8px;">
+                <span class="material-symbols-rounded">qr_code_2</span> Generate QR Receipt
+            </button>
+        </div>
+
+        <!-- RIGHT: PREVIEW & ACTIONS -->
+        <div class="card">
+            <h3 style="margin: 0 0 20px 0; color: var(--text-main); font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">QR Preview</h3>
+            
+            <div class="qr-preview-container" id="qrPreviewArea">
+                <span class="material-symbols-rounded" style="font-size: 48px; color: var(--grey-med); margin-bottom: 12px;">image</span>
+                <p style="color: var(--text-muted); font-size: 14px;">Fill details and click Generate to view the payment QR code.</p>
+                <canvas id="compositeCanvas" width="400" height="520"></canvas>
+            </div>
+
+            <div class="action-buttons" id="qrActionButtons">
+                <button class="btn-outline" onclick="window.downloadQR('jpeg')">
+                    <span class="material-symbols-rounded">image</span> Save JPEG
+                </button>
+                <button class="btn-outline" onclick="window.downloadQR('pdf')">
+                    <span class="material-symbols-rounded">picture_as_pdf</span> Save PDF
+                </button>
+                <button class="btn-primary" onclick="window.shareToWhatsApp()" style="grid-column: 1 / -1; background: #25D366;">
+                    <span class="material-symbols-rounded">send</span> Send to Patient
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js'; 
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        window.qrPatientsCache = {};
+
+        // 1. Dynamic Script Loader (for qrious and jspdf)
+        function loadExternalScript(src) {
+            return new Promise((resolve) => {
+                if (document.querySelector(`script[src="${src}"]`)) return resolve();
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Initialize Module
+        async function initQRModule() {
+            // Load required external libraries for QR generation and PDF export
+            await loadExternalScript('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js');
+            await loadExternalScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            window.loadQRPatients();
+        }
+
+        // 2. Load Patients (Respecting Branch Rules)
+        window.loadQRPatients = async function() {
+            const dataList = document.getElementById('qr-patients-datalist');
+            if(!dataList) return;
+            try {
+                let q = query(collection(db, "patients"));
+                if (window.currentUser && window.currentUser.role !== 'admin') {
+                    q = query(collection(db, "patients"), where("branch", "==", window.currentUser.branch));
+                }
+                
+                const snap = await getDocs(q);
+                let html = '';
+                window.qrPatientsCache = {};
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    if(p.name && p.mobile) {
+                        const label = `${p.name} - ${p.mobile}`;
+                        window.qrPatientsCache[label] = p;
+                        html += `<option value="${label}">`;
+                    }
+                });
+                dataList.innerHTML = html;
+            } catch(e) { console.error("Error loading QR patients: ", e); }
+        };
+
+        // 3. Auto-Fill Details & Calculate Dues
+        window.handleQRPatientSelect = async function() {
+            const searchVal = document.getElementById('qrPatientSearch').value;
+            const pData = window.qrPatientsCache[searchVal];
+            
+            if (pData) {
+                document.getElementById('qrMobile').value = pData.mobile || '';
+                document.getElementById('qrAmount').value = 'Loading...';
+                
+                let opBalance = 0;
+                try {
+                    let aptsQ = query(collection(db, "appointments"), where("mobile", "==", pData.mobile));
+                    if (window.currentUser && window.currentUser.role !== 'admin') {
+                        aptsQ = query(collection(db, "appointments"), where("mobile", "==", pData.mobile), where("branch", "==", window.currentUser.branch));
+                    }
+                    const aptsSnap = await getDocs(aptsQ);
+                    aptsSnap.forEach(doc => { opBalance += parseFloat(doc.data().balance) || 0; });
+                    
+                    document.getElementById('qrAmount').value = opBalance > 0 ? opBalance.toFixed(2) : '';
+                    if(opBalance <= 0) alert("This patient currently has no pending dues.");
+                } catch(e) { 
+                    console.error("Error fetching balance", e); 
+                    document.getElementById('qrAmount').value = '';
+                }
+            }
+        };
+
+        // 4. Generate Composite Canvas Receipt
+        window.generateUPIQR = function() {
+            const amount = parseFloat(document.getElementById('qrAmount').value);
+            const upiId = document.getElementById('qrUpiId').value.trim();
+            const payeeName = document.getElementById('qrPayeeName').value.trim();
+            const narration = document.getElementById('qrNarration').value.trim() || 'Clinic Payment';
+            const patientName = document.getElementById('qrPatientSearch').value.split('-')[0].trim() || 'Patient';
+
+            if (!amount || amount <= 0 || !upiId) return alert("Please enter a valid amount and UPI ID.");
+
+            // Standard UPI String Format
+            const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(narration)}`;
+
+            const cvs = document.getElementById('compositeCanvas');
+            const ctx = cvs.getContext('2d');
+            const width = 400;
+            const height = 520;
+
+            // Clear & Draw Background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, width, height);
+
+            // Add subtle border
+            ctx.strokeStyle = "#E2E8F0";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(2, 2, width - 4, height - 4);
+
+            // Draw Logo
+            const logo = new Image();
+            logo.src = 'assets/name.png'; 
+            
+            logo.onload = () => {
+                // Dimensions for logo
+                const logoW = 180;
+                const logoH = 45;
+                ctx.drawImage(logo, (width - logoW) / 2, 30, logoW, logoH);
+
+                // Draw Text Data
+                ctx.textAlign = "center";
+                
+                ctx.fillStyle = "#0F172A";
+                ctx.font = "bold 24px Inter, sans-serif";
+                ctx.fillText(`₹ ${amount.toFixed(2)}`, width / 2, 110);
+                
+                ctx.fillStyle = "#64748B";
+                ctx.font = "14px Inter, sans-serif";
+                ctx.fillText(`Payment for: ${patientName}`, width / 2, 135);
+
+                // Generate raw QR Code Image using QRious
+                const qr = new QRious({
+                    value: upiString,
+                    size: 220,
+                    level: 'H'
+                });
+
+                // Draw QR Code onto composite canvas
+                const qrImage = new Image();
+                qrImage.src = qr.toDataURL();
+                qrImage.onload = () => {
+                    ctx.drawImage(qrImage, (width - 220) / 2, 160, 220, 220);
+                    
+                    // Draw Payee Info Below QR
+                    ctx.fillStyle = "#0F172A";
+                    ctx.font = "bold 15px Inter, sans-serif";
+                    ctx.fillText(payeeName, width / 2, 410);
+                    
+                    ctx.fillStyle = "#64748B";
+                    ctx.font = "13px Inter, sans-serif";
+                    ctx.fillText(`UPI ID: ${upiId}`, width / 2, 430);
+
+                    // --- MUTED FOOTER ---
+                    ctx.fillStyle = "#CBD5E1"; 
+                    ctx.font = "italic 11px Inter, sans-serif";
+                    ctx.fillText("Payment request generated from CM", width / 2, 490);
+
+                    // Reveal UI
+                    document.querySelector('#qrPreviewArea p').style.display = 'none';
+                    document.querySelector('#qrPreviewArea span').style.display = 'none';
+                    cvs.style.display = 'block';
+                    document.getElementById('qrActionButtons').style.display = 'grid';
+                };
+            };
+            
+            logo.onerror = () => {
+                alert("Could not load clinic logo. Please ensure 'assets/name.png' exists.");
+            }
+        };
+
+        // 5. Download Handlers
+        window.downloadQR = function(format) {
+            const cvs = document.getElementById('compositeCanvas');
+            const patientName = document.getElementById('qrPatientSearch').value.split('-')[0].trim().replace(/\s+/g, '_') || 'Patient';
+            const fileName = `Payment_QR_${patientName}`;
+
+            if (format === 'jpeg') {
+                const link = document.createElement('a');
+                link.download = `${fileName}.jpg`;
+                link.href = cvs.toDataURL('image/jpeg', 1.0);
+                link.click();
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                // PDF dimensions matching canvas ratio (400x520) mapped to points
+                const doc = new jsPDF({ orientation: "portrait", unit: "px", format: [400, 520] });
+                const imgData = cvs.toDataURL('image/jpeg', 1.0);
+                doc.addImage(imgData, 'JPEG', 0, 0, 400, 520);
+                doc.save(`${fileName}.pdf`);
+            }
+        };
+
+        // 6. Share to WhatsApp
+        window.shareToWhatsApp = async function() {
+            const cvs = document.getElementById('compositeCanvas');
+            const mobile = document.getElementById('qrMobile').value.trim();
+            const amount = document.getElementById('qrAmount').value;
+            const upiId = document.getElementById('qrUpiId').value.trim();
+            
+            const message = `Hello, please find your pending clinic payment request for ₹${amount}. You can pay directly using UPI ID: ${upiId}.`;
+
+            // Try Native Web Share API (Works great on mobile devices for sharing images to WhatsApp)
+            if (navigator.canShare) {
+                cvs.toBlob(async (blob) => {
+                    const file = new File([blob], "Payment_QR.jpg", { type: "image/jpeg" });
+                    if (navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Clinic Payment QR',
+                                text: message
+                            });
+                            return; // Success
+                        } catch (err) {
+                            console.log("Share cancelled or failed.", err);
+                        }
+                    } else { fallbackWA(mobile, message); }
+                }, 'image/jpeg', 0.9);
+            } else {
+                // Fallback for Desktop/Unsupported Browsers
+                fallbackWA(mobile, message);
+            }
+        };
+
+        function fallbackWA(mobile, message) {
+            alert("Direct image sharing is supported mostly on mobile devices. Downloading the image now. Please attach it manually in WhatsApp.");
+            window.downloadQR('jpeg'); // Force download so they can attach it
+            
+            setTimeout(() => {
+                const waUrl = mobile ? `https://wa.me/91${mobile}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(waUrl, '_blank');
+            }, 1000);
+        }
+
+        // Run Initialization
+        initQRModule();
+
+    </script>
+</div>
+</body>
+</html>
