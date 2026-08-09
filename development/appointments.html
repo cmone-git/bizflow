@@ -103,19 +103,13 @@
             
             <h4 style="color: var(--primary); margin: 0 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px;">1. Patient Details</h4>
             
-            <!-- SEARCH / AUTO-FILL COMPONENT -->
-            <div class="input-group" style="margin-bottom: 16px;">
-                <div style="grid-column: 1 / -1;">
-                    <label class="form-label" style="color: var(--primary);">Select / Search Patient (Auto-fills details below) ▼</label>
-                    <input list="patients-datalist" id="aptPatientSearch" class="form-input" placeholder="Search Patient Name or Mobile" onchange="window.handlePatientSelect()" autocomplete="off" style="border-color: var(--primary); background: var(--primary-light);">
-                    <datalist id="patients-datalist"></datalist>
-                </div>
-            </div>
-
             <div class="input-group four-cols">
                 <div>
-                    <label class="form-label">Patient Mobile *</label>
-                    <input type="tel" id="aptMobile" class="form-input" placeholder="10-digit number" maxlength="10" required>
+                    <label class="form-label">Patient Mobile (Auto-Fill) *</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="tel" id="aptMobile" class="form-input" placeholder="10-digit number" maxlength="10" required>
+                        <button type="button" class="btn-verify" id="verifyAptBtn" onclick="window.verifyPatientMobile()">Check</button>
+                    </div>
                 </div>
                 <div>
                     <label class="form-label">Patient Name *</label>
@@ -150,8 +144,6 @@
                 </div>
             </div>
 
-            <h4 style="color: var(--primary); margin: 24px 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px;">2. Administration & Billing</h4>
-
             <div class="input-group three-cols">
                 <div>
                     <label class="form-label">Branch *</label>
@@ -169,11 +161,14 @@
                 </div>
             </div>
 
+            <h4 style="color: var(--primary); margin: 24px 0 16px 0; border-bottom: 1px solid var(--border); padding-bottom: 8px;">2. Administration & Billing</h4>
+
             <div class="input-group three-cols">
                 <div>
                     <label class="form-label">Therapist Assigned *</label>
-                    <input list="therapists-datalist" id="aptTherapist" class="form-input" placeholder="Search / Select Therapist..." required autocomplete="off">
-                    <datalist id="therapists-datalist"></datalist>
+                    <select id="aptTherapist" class="form-input" required>
+                        <option value="">Loading Therapists...</option>
+                    </select>
                 </div>
                 <div>
                     <label class="form-label">Appointment Status *</label>
@@ -343,7 +338,6 @@
 
         window.appointmentsDataCache = {};
         window.allBranchesString = "";
-        window.allPatientsCache = {}; // Cache for the dropdown feature
 
 // --- AUTHENTICATION GATEKEEPER ---
         // This ensures the page content only loads if a valid user session exists
@@ -368,7 +362,6 @@
             // --------------------------------------------
 
             // User IS logged in. Proceed with bootstrapping the module.
-            window.loadPatientsForApt(); 
             window.loadBranchesForApt();
             window.loadTherapistsForApt();
             setMinBookingDate();
@@ -429,35 +422,7 @@
             }
         }
 
-// --- 0. SAFE DYNAMIC LOADERS ---
-        window.loadPatientsForApt = async function() {
-            const dataList = document.getElementById('patients-datalist');
-            if(!dataList) return;
-            try {
-                // NEW: Apply branch filter if the user is not an admin
-                let q;
-                if (window.currentUser && window.currentUser.role !== 'admin') {
-                    q = query(collection(db, "patients"), where("branch", "==", window.currentUser.branch));
-                } else {
-                    q = query(collection(db, "patients"));
-                }
-                
-                const snap = await getDocs(q);
-                let html = '';
-                snap.forEach(doc => {
-                    const p = doc.data();
-                    if(p.name && p.mobile) {
-                        const label = `${p.name} - ${p.mobile}`;
-                        window.allPatientsCache[label] = p;
-                        html += `<option value="${label}">`;
-                    }
-                });
-                dataList.innerHTML = html;
-            } catch(e) {
-                console.error("Error dynamically loading patients: ", e);
-            }
-        };
-
+        // --- 0. SAFE DYNAMIC LOADERS ---
         window.loadBranchesForApt = async function() {
             const branchSelect = document.getElementById('aptBranch');
             const filterSelect = document.getElementById('filterBranch');
@@ -499,19 +464,10 @@
             }
         };
 
-            window.loadTherapistsForApt = async function() {
-                const dataList = document.getElementById('therapists-datalist');
-                if(!dataList) return;
-                try {
-                // NEW: Apply branch filter if the user is not an admin
-                let q;
-                if (window.currentUser && window.currentUser.role !== 'admin') {
-                    q = query(collection(db, "therapists"), where("branch", "==", window.currentUser.branch));
-                } else {
-                    q = query(collection(db, "therapists"));
-                }
-
-                const snap = await getDocs(q);
+        window.loadTherapistsForApt = async function() {
+            const therapistSelect = document.getElementById('aptTherapist');
+            try {
+                const snap = await getDocs(collection(db, "therapists"));
                 let thList = [];
                 snap.forEach(doc => { 
                     const tName = doc.data().name;
@@ -519,11 +475,11 @@
                 });
                 thList.sort();
 
-                let html = '';
-                thList.forEach(tName => html += `<option value="${tName}">`);
-                dataList.innerHTML = html;
+                let html = '<option value="">Select Therapist</option>';
+                thList.forEach(tName => html += `<option value="${tName}">${tName}</option>`);
+                therapistSelect.innerHTML = html;
             } catch(e) {
-                console.error("Error loading therapists: ", e);
+                therapistSelect.innerHTML = '<option value="">Select Therapist</option>';
             }
         };
 
@@ -549,7 +505,6 @@
         window.resetAptForm = function() {
             document.getElementById('add-appointment-form').reset();
             document.getElementById('aptDocId').value = ''; 
-            document.getElementById('aptPatientSearch').value = ''; 
             document.getElementById('saveAptBtn').innerText = "Save Appointment";
             document.getElementById('reschedule-container').classList.remove('active');
             document.getElementById('aptPrevDues').value = '';
@@ -584,39 +539,47 @@
         }
 
         // --- 2. AUTO-FILL PATIENT & OP BALANCE ---
-        window.handlePatientSelect = async function() {
-            const searchVal = document.getElementById('aptPatientSearch').value;
-            const pData = window.allPatientsCache[searchVal];
-            
-            if (pData) {
-                // Auto-fill all standard inputs
-                document.getElementById('aptName').value = pData.name || '';
-                document.getElementById('aptMobile').value = pData.mobile || '';
-                document.getElementById('aptAge').value = pData.age || '';
-                document.getElementById('aptCategory').value = pData.category || 'Normal';
-                document.getElementById('aptLocation').value = pData.location || '';
-                document.getElementById('aptPatientNotes').value = pData.notes || '';
-                
-                // Pre-fill branch if recorded
-                if(pData.branch) {
-                    document.getElementById('aptBranch').value = pData.branch;
+        window.verifyPatientMobile = async function() {
+            const mobile = document.getElementById('aptMobile').value;
+            const btn = document.getElementById('verifyAptBtn');
+
+            if (mobile.length !== 10) return alert("Enter 10-digit mobile number first.");
+            btn.innerText = "...";
+            try {
+                const pSnap = await getDocs(query(collection(db, "patients"), where("mobile", "==", mobile)));
+                if (!pSnap.empty) {
+                    const pData = pSnap.docs[0].data();
+                    document.getElementById('aptName').value = pData.name || '';
+                    document.getElementById('aptAge').value = pData.age || '';
+                    document.getElementById('aptPatientNotes').value = pData.notes || '';
+                    document.getElementById('aptLocation').value = pData.location || '';
+                    document.getElementById('aptCategory').value = pData.category || 'Normal';
+                    alert("Patient Found! Details auto-filled.");
+                } else {
+                    document.getElementById('aptName').value = '';
+                    document.getElementById('aptAge').value = '';
+                    document.getElementById('aptPatientNotes').value = '';
+                    document.getElementById('aptLocation').value = '';
+                    document.getElementById('aptCategory').value = 'Normal';
+                    alert("No patient found. Details will be auto-registered upon saving.");
                 }
 
-                // Check and calculate previous dues (OP Balance) automatically
                 let opBalance = 0;
                 const currentDocId = document.getElementById('aptDocId').value;
-                try {
-                    const aptsSnap = await getDocs(query(collection(db, "appointments"), where("mobile", "==", pData.mobile)));
-                    aptsSnap.forEach(doc => {
-                        if (doc.id !== currentDocId) {
-                            opBalance += parseFloat(doc.data().balance) || 0;
-                        }
-                    });
-                    document.getElementById('aptPrevDues').value = opBalance.toFixed(2);
-                    window.calcBalance();
-                } catch(e) { console.error("Error fetching balance info", e); }
-            }
-        };
+                const aptsSnap = await getDocs(query(collection(db, "appointments"), where("mobile", "==", mobile)));
+                
+                aptsSnap.forEach(doc => {
+                    if (doc.id !== currentDocId) {
+                        opBalance += parseFloat(doc.data().balance) || 0;
+                    }
+                });
+                
+                document.getElementById('aptPrevDues').value = opBalance.toFixed(2);
+                window.calcBalance();
+
+            } catch(e) { console.error(e); }
+            btn.innerText = "Check";
+        }
 
         // --- 3. LOAD APPOINTMENTS (DOCTOR-WISE GROUPING) ---
         window.loadAppointments = async function() {
