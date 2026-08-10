@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - CM ADMIN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+  <div id="root">
+     <div class="min-h-screen flex items-center justify-center">
+        <div class="animate-spin w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full"></div>
+     </div>
+  </div>
+
+  <script type="module" type="text/babel">
+    import { auth, db, FB } from './js/firebase.js';
+    import { requireAuth } from './js/guard.js';
+    const { useState, useEffect, useMemo } = React;
+
+    function Dashboard({ user }) {
+        const [clients, setClients] = useState([]);
+        const [tasks, setTasks] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            // Save data to the ROOT collections
+            const clientsRef = FB.collection(db, 'Clients');
+            const tasksRef = FB.collection(db, 'Compliances');
+
+            const unsubClients = FB.onSnapshot(clientsRef, (snap) => {
+                const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setClients(user.role === 'admin' ? data : data.filter(c => c.branchId === user.assignedBranch));
+            });
+
+            const unsubTasks = FB.onSnapshot(tasksRef, (snap) => {
+                const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setTasks(data);
+                setLoading(false);
+            });
+
+            return () => { unsubClients(); unsubTasks(); };
+        }, []);
+
+        const kpis = useMemo(() => {
+            return {
+                total: clients.length,
+                active: clients.filter(c => c.status === 'Active').length,
+                noMobile: clients.filter(c => !c.mobile).length,
+                unpaid: tasks.filter(t => t.PaymentStatus === 'Unpaid').reduce((acc, curr) => acc + (Number(curr.ProfessionalFee)||0), 0)
+            };
+        }, [clients, tasks]);
+
+        const handleLogout = async () => {
+            await FB.signOut(auth);
+            window.location.href = 'index.html';
+        };
+
+        if(loading) return <div className="p-8 text-center text-slate-500">Loading Dashboard Data...</div>;
+
+        return (
+            <div className="pb-24">
+                <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm px-4 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <img src="assets/logo.png" className="w-8 h-8 rounded-lg" onerror="this.style.display='none'" />
+                        <div>
+                            <h1 className="font-bold text-slate-900 leading-tight">CM ADMIN</h1>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">{user.role === 'admin' ? 'Corporate Edition' : `Branch: ${user.assignedBranch}`}</p>
+                        </div>
+                    </div>
+                    <button onClick={handleLogout} className="text-slate-400 hover:text-rose-600 font-bold text-xs uppercase">Sign Out</button>
+                </header>
+
+                <main className="max-w-7xl mx-auto p-4 space-y-6 pt-6">
+                    <div className="bg-gradient-to-br from-indigo-900 via-violet-800 to-indigo-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                      <div className="relative z-10">
+                        <h2 className="text-2xl font-extrabold tracking-tight">Client Portfolio Intelligence</h2>
+                        <p className="text-indigo-200 text-xs mt-1">Managing {kpis.total} client records.</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                            <div className="text-3xl font-extrabold text-slate-900">{kpis.total}</div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase mt-1">Total Clients</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                            <div className="text-3xl font-extrabold text-slate-900">{kpis.active}</div>
+                            <div className="text-[10px] text-emerald-500 font-bold uppercase mt-1">Active Status</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                            <div className="text-3xl font-extrabold text-slate-900">{kpis.noMobile}</div>
+                            <div className="text-[10px] text-amber-500 font-bold uppercase mt-1">Missing Mobile</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                            <div className="text-3xl font-extrabold text-slate-900">₹{kpis.unpaid}</div>
+                            <div className="text-[10px] text-rose-500 font-bold uppercase mt-1">Pending Balance</div>
+                        </div>
+                    </div>
+                </main>
+
+                {/* MPA Static Bottom Navigation */}
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-between px-2 pb-safe pt-2 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+                    <a href="admin.html" className="flex-1 flex flex-col items-center p-1 text-indigo-600">
+                        <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>
+                        <span className="text-[10px] font-extrabold">Dash</span>
+                    </a>
+                    <a href="clients.html" className="flex-1 flex flex-col items-center p-1 text-slate-400 hover:text-slate-600">
+                        <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3.13a4 4 0 0 1 0 7.75M9 7a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm13 14v-2a4 4 0 0 0-3-3.87"/></svg>
+                        <span className="text-[10px] font-semibold">Clients</span>
+                    </a>
+                    <a href="compliances.html" className="flex-1 flex flex-col items-center p-1 text-slate-400 hover:text-slate-600">
+                        <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H9H8"/></svg>
+                        <span className="text-[10px] font-semibold">Tasks</span>
+                    </a>
+                    <a href="more.html" className="flex-1 flex flex-col items-center p-1 text-slate-400 hover:text-slate-600">
+                        <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                        <span className="text-[10px] font-semibold">Menu</span>
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
+    requireAuth((user) => {
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Dashboard user={user} />);
+    });
+  </script>
+</body>
+</html>
