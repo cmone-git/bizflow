@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { 
     getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, 
-    onSnapshot, setDoc, getDocs, query, where, orderBy 
+    onSnapshot, setDoc, getDocs, getDoc, query, where, orderBy 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const MY_FIREBASE_CONFIG = {
@@ -18,14 +18,12 @@ const MY_FIREBASE_CONFIG = {
   appId: "1:138705123778:web:9561bff9f0f5d89bb6fe5b"
 };
 
-// Initialize Firebase
 const app = initializeApp(MY_FIREBASE_CONFIG);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Export API for React components to use
 export const FB = {
     signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, 
     GoogleAuthProvider, signOut, onAuthStateChanged, 
-    collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc, getDocs, query, where, orderBy
+    collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, setDoc, getDocs, getDoc, query, where, orderBy
 };
