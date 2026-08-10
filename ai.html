@@ -9,15 +9,11 @@
   <script>
     window.onerror = function(msg, url, line, col, error) {
       var loader = document.getElementById('fallback-loader');
-      if (loader) {
-        loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 CRASH REPORT:</b><br><br>' + msg + '<br>Line: ' + line + '<br><br>' + (error && error.stack ? error.stack : '') + '</div>';
-      }
+      if (loader) loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 CRASH REPORT:</b><br><br>' + msg + '<br>Line: ' + line + '<br><br>' + (error && error.stack ? error.stack : '') + '</div>';
     };
     window.addEventListener('unhandledrejection', function(event) {
       var loader = document.getElementById('fallback-loader');
-      if (loader) {
-        loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>📡 NETWORK / DATABASE ERROR:</b><br><br>' + (event.reason ? event.reason.toString() : 'Unknown Error') + '</div>';
-      }
+      if (loader) loader.innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>📡 NETWORK / DATABASE ERROR:</b><br><br>' + (event.reason ? event.reason.toString() : 'Unknown Error') + '</div>';
     });
   </script>
 
@@ -31,9 +27,6 @@
   
   <!-- Babel Standalone -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
-  
-  <!-- Lucide React Icons -->
-  <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.min.js" crossorigin="anonymous"></script>
 
   <!-- Bulletproof Firebase Loading Sequence -->
   <script type="module">
@@ -44,17 +37,10 @@
         const fsMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
         
         window.FirebaseAPI = {
-          initializeApp: appMod.initializeApp,
-          getAuth: authMod.getAuth,
-          signInAnonymously: authMod.signInAnonymously,
-          onAuthStateChanged: authMod.onAuthStateChanged,
-          getFirestore: fsMod.getFirestore,
-          collection: fsMod.collection,
-          doc: fsMod.doc,
-          addDoc: fsMod.addDoc,
-          updateDoc: fsMod.updateDoc,
-          deleteDoc: fsMod.deleteDoc,
-          onSnapshot: fsMod.onSnapshot
+          initializeApp: appMod.initializeApp, getAuth: authMod.getAuth,
+          signInAnonymously: authMod.signInAnonymously, onAuthStateChanged: authMod.onAuthStateChanged,
+          getFirestore: fsMod.getFirestore, collection: fsMod.collection, doc: fsMod.doc,
+          addDoc: fsMod.addDoc, updateDoc: fsMod.updateDoc, deleteDoc: fsMod.deleteDoc, onSnapshot: fsMod.onSnapshot
         };
       } catch (err) {
         console.error("Critical error loading Firebase modules:", err);
@@ -77,19 +63,50 @@
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
 
-    // 🔥 FIX: Extracted Icons globally so BOTH the App and the Loading Screen can use them!
-    const icons = window.lucide || {};
-    const { 
-      MessageCircle = () => <span>💬</span>, MessageSquare = () => <span>💬</span>, Smartphone = () => <span>📱</span>, 
-      Bot = () => <span>🤖</span>, Wand2 = () => <span>✨</span>, Loader2 = () => <span>⏳</span>,
-      Users = () => <span>👥</span>, BarChart3 = () => <span>📊</span>, List = () => <span>📋</span>, 
-      Phone = () => <span>📞</span>, LayoutGrid = () => <span>🗂️</span>, Plus = () => <span>➕</span>, 
-      Search = () => <span>🔍</span>, X = () => <span>❌</span>, ArrowUpDown = () => <span>↕️</span>, 
-      AlertCircle = () => <span>⚠️</span>, Edit3 = () => <span>✏️</span>, Mail = () => <span>✉️</span>, 
-      ChevronLeft = () => <span>⬅️</span>, ChevronRight = () => <span>➡️</span>, CheckCircle2 = () => <span>✅</span>, 
-      ShieldCheck = () => <span>🛡️</span>, Trash2 = () => <span>🗑️</span>, UserPlus = () => <span>👤+</span>, 
-      Check = () => <span>✔️</span>, Copy = () => <span>📋</span>, Sparkles = () => <span>✨</span>
-    } = icons;
+    // ==========================================
+    // BULLETPROOF CORPORATE SVG ICONS (NO CDN REQUIRED)
+    // ==========================================
+    const Icon = ({ name, className = "w-5 h-5" }) => {
+      const paths = {
+        users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        barChart: <><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></>,
+        list: <><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>,
+        phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>,
+        grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>,
+        plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+        search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+        x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+        arrowUpDown: <><polyline points="16 18 12 22 8 18"/><polyline points="8 6 12 2 16 6"/><line x1="12" y1="22" x2="12" y2="2"/></>,
+        alert: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+        edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+        mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+        chevronLeft: <polyline points="15 18 9 12 15 6"/>,
+        chevronRight: <polyline points="9 18 15 12 9 6"/>,
+        checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+        shieldCheck: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></>,
+        trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>,
+        userPlus: <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>,
+        check: <polyline points="20 6 9 17 4 12"/>,
+        copy: <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+        sparkles: <><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M20.5 5.5 19 9l-1.5-3.5L14 4l3.5-1.5L19 2l1.5 3.5L24 7l-3.5 1.5Z"/></>,
+        bot: <><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></>,
+        wand: <><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></>,
+        messageCircle: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>,
+        smartphone: <><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></>,
+        database: <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>
+      };
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          {paths[name]}
+        </svg>
+      );
+    };
+
+    const Spinner = ({ className = "w-5 h-5 animate-spin" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+    );
     
     // ==========================================
     // 1. YOUR FIREBASE CONFIGURATION
@@ -104,7 +121,6 @@
       measurementId: "G-09DM4NZF8D"
     };
 
-    // Exponential backoff helper for reliable Gemini API calls
     async function fetchWithBackoff(url, options, maxRetries = 5) {
       const delays = [1000, 2000, 4000, 8000, 16000];
       for (let i = 0; i < maxRetries; i++) {
@@ -122,7 +138,7 @@
     // ==========================================
     // 2. Main Application UI Component
     // ==========================================
-    function App({ data, updateItem, deleteItem, insertItem }) {
+    function App({ data, updateItem, deleteItem, insertItem, isMockMode }) {
       
       const [activeTab, setActiveTab] = useState('analytics'); 
       const [searchQuery, setSearchQuery] = useState('');
@@ -410,9 +426,16 @@
       return (
         <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased pb-24 md:pb-12">
           
+          {isMockMode && (
+             <div className="bg-amber-500 text-white text-xs font-bold px-4 py-2 text-center flex justify-center items-center gap-2">
+                <Icon name="database" className="w-4 h-4" /> 
+                Running in Local Demo Mode (Firebase disconnected or connecting).
+             </div>
+          )}
+
           {toastMessage && (
             <div className="fixed top-5 left-1/2 -translate-x-1/2 md:bottom-5 md:top-auto md:right-5 md:left-auto md:translate-x-0 z-[60] flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl text-sm border border-slate-700 w-11/12 md:w-auto max-w-sm">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <Icon name="checkCircle" className="w-4 h-4 text-emerald-400 shrink-0" />
               <span className="truncate">{toastMessage}</span>
             </div>
           )}
@@ -422,7 +445,7 @@
               <div className="flex items-center justify-between h-16">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
-                    <Users className="w-5 h-5" />
+                    <Icon name="users" className="w-5 h-5" />
                   </div>
                   <div>
                     <h1 className="text-lg font-bold text-slate-900 leading-tight">Client Hub CRM</h1>
@@ -431,15 +454,15 @@
                 </div>
 
                 <div className="hidden md:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-                  <button onClick={() => setActiveTab('analytics')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'analytics' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><BarChart3 className="w-4 h-4" /><span>Dashboard</span></button>
-                  <button onClick={() => setActiveTab('directory')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'directory' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><List className="w-4 h-4" /><span>Directory</span></button>
-                  <button onClick={() => setActiveTab('contacts')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'contacts' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><Phone className="w-4 h-4" /><span>Contacts</span></button>
-                  <button onClick={() => setActiveTab('kanban')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'kanban' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><LayoutGrid className="w-4 h-4" /><span>Kanban</span></button>
+                  <button onClick={() => setActiveTab('analytics')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'analytics' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><Icon name="barChart" className="w-4 h-4" /><span>Dashboard</span></button>
+                  <button onClick={() => setActiveTab('directory')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'directory' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><Icon name="list" className="w-4 h-4" /><span>Directory</span></button>
+                  <button onClick={() => setActiveTab('contacts')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'contacts' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><Icon name="phone" className="w-4 h-4" /><span>Contacts</span></button>
+                  <button onClick={() => setActiveTab('kanban')} className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${activeTab === 'kanban' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><Icon name="grid" className="w-4 h-4" /><span>Kanban</span></button>
                 </div>
 
                 <div className="flex items-center space-x-3">
                   <button onClick={openAddModal} className="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors cursor-pointer">
-                    <Plus className="w-4 h-4" />
+                    <Icon name="plus" className="w-4 h-4" />
                     <span className="hidden sm:inline">Add Client</span>
                   </button>
                 </div>
@@ -452,11 +475,11 @@
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
                   <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
-                    <Users className="w-64 h-64 text-white" />
+                    <Icon name="users" className="w-64 h-64 text-white" />
                   </div>
                   <div className="relative z-10 max-w-2xl">
                     <div className="inline-flex items-center gap-1.5 bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-xs px-2.5 py-1 rounded-full mb-3">
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <Icon name="sparkles" className="w-3.5 h-3.5" />
                       <span>Real-time Portfolio Summary</span>
                     </div>
                     <h2 className="text-2xl font-extrabold tracking-tight">Client Portfolio Intelligence</h2>
@@ -473,28 +496,28 @@
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Portfolio</span><div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center"><Users className="w-4 h-4" /></div></div>
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Portfolio</span><div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center"><Icon name="users" className="w-4 h-4" /></div></div>
                     <div className="mt-3">
                       <div className="text-3xl font-extrabold text-slate-900">{kpis.total}</div>
-                      <div className="flex items-center text-xs text-slate-500 mt-1"><span className="font-semibold text-emerald-600 flex items-center gap-0.5 mr-1"><CheckCircle2 className="w-3 h-3" /> {kpis.active}</span>active clients registered</div>
+                      <div className="flex items-center text-xs text-slate-500 mt-1"><span className="font-semibold text-emerald-600 flex items-center gap-0.5 mr-1"><Icon name="checkCircle" className="w-3 h-3" /> {kpis.active}</span>active clients registered</div>
                     </div>
                   </div>
                   <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Status</span><div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><CheckCircle2 className="w-4 h-4" /></div></div>
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Status</span><div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><Icon name="checkCircle" className="w-4 h-4" /></div></div>
                     <div className="mt-3">
                       <div className="text-3xl font-extrabold text-slate-900">{kpis.activePct}%</div>
                       <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${kpis.activePct}%` }} /></div>
                     </div>
                   </div>
                   <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">PAN Coverage</span><div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><ShieldCheck className="w-4 h-4" /></div></div>
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">PAN Coverage</span><div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><Icon name="shieldCheck" className="w-4 h-4" /></div></div>
                     <div className="mt-3">
                       <div className="text-3xl font-extrabold text-slate-900">{kpis.withPan}</div>
                       <div className="flex items-center justify-between text-xs text-slate-500 mt-1"><span>{kpis.panPct}% recorded</span><span className="text-slate-400">{kpis.withGst} GST registered</span></div>
                     </div>
                   </div>
                   <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Info Recorded</span><div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Phone className="w-4 h-4" /></div></div>
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Info Recorded</span><div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Icon name="phone" className="w-4 h-4" /></div></div>
                     <div className="mt-3">
                       <div className="text-3xl font-extrabold text-slate-900">{kpis.withContact}</div>
                       <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${kpis.contactPct}%` }} /></div>
@@ -509,9 +532,9 @@
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                   <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
                     <div className="relative flex-1">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input type="text" placeholder="Search by Name, ID, PAN, Email, Phone..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-900" />
-                      {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>}
+                      {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><Icon name="x" className="w-3.5 h-3.5" /></button>}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100">
@@ -557,13 +580,13 @@
                       <thead className="bg-slate-50 text-slate-500 uppercase font-semibold text-[10px] border-b border-slate-200 select-none">
                         <tr>
                           <th onClick={() => handleSort('clientId')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center space-x-1"><span>Client ID</span><ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                            <div className="flex items-center space-x-1"><span>Client ID</span><Icon name="arrowUpDown" className="w-3 h-3 text-slate-400" /></div>
                           </th>
                           <th onClick={() => handleSort('clientName')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center space-x-1"><span>Client Name</span><ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                            <div className="flex items-center space-x-1"><span>Client Name</span><Icon name="arrowUpDown" className="w-3 h-3 text-slate-400" /></div>
                           </th>
                           <th onClick={() => handleSort('status')} className="px-4 py-3 cursor-pointer hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center space-x-1"><span>Status</span><ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                            <div className="flex items-center space-x-1"><span>Status</span><Icon name="arrowUpDown" className="w-3 h-3 text-slate-400" /></div>
                           </th>
                           <th className="px-4 py-3">Contact Info</th>
                           <th className="px-4 py-3">PAN / Tax ID</th>
@@ -572,7 +595,7 @@
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {paginatedClients.length === 0 ? (
-                          <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400"><AlertCircle className="w-8 h-8 mx-auto mb-2 text-slate-300" /><p className="text-sm font-medium text-slate-600">No matching clients found</p></td></tr>
+                          <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400"><Icon name="alert" className="w-8 h-8 mx-auto mb-2 text-slate-300" /><p className="text-sm font-medium text-slate-600">No matching clients found</p></td></tr>
                         ) : (
                           paginatedClients.map((client) => (
                             <tr key={client.id} onClick={() => { setSelectedClient(client); setIsDetailOpen(true); }} className="hover:bg-indigo-50/40 cursor-pointer transition-colors group">
@@ -589,15 +612,15 @@
                               </td>
                               <td className="px-4 py-3">
                                 <div className="space-y-0.5">
-                                  {client.mobile && <div className="flex items-center text-[11px] text-slate-500"><Phone className="w-3 h-3 mr-1 text-slate-400" /><span>+91 {client.mobile}</span></div>}
-                                  {client.email && <div className="flex items-center text-[11px] text-slate-600"><Mail className="w-3 h-3 mr-1 text-slate-400" /><span className="truncate max-w-[140px]">{client.email}</span></div>}
+                                  {client.mobile && <div className="flex items-center text-[11px] text-slate-500"><Icon name="phone" className="w-3 h-3 mr-1 text-slate-400" /><span>+91 {client.mobile}</span></div>}
+                                  {client.email && <div className="flex items-center text-[11px] text-slate-600"><Icon name="mail" className="w-3 h-3 mr-1 text-slate-400" /><span className="truncate max-w-[140px]">{client.email}</span></div>}
                                 </div>
                               </td>
                               <td className="px-4 py-3 font-mono text-[11px]">
                                 {client.pan && client.pan !== 'PANNOTREQD' ? <span className="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{client.pan}</span> : <span className="text-slate-300">—</span>}
                               </td>
                               <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                                <button onClick={(e) => openEditModal(client, e)} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100 transition-colors" title="Edit Client"><Edit3 className="w-4 h-4" /></button>
+                                <button onClick={(e) => openEditModal(client, e)} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100 transition-colors" title="Edit Client"><Icon name="edit" className="w-4 h-4" /></button>
                               </td>
                             </tr>
                           ))
@@ -608,8 +631,8 @@
                   <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                     <div className="text-xs text-slate-500">Page <strong className="text-slate-900">{currentPage}</strong> of <strong className="text-slate-900">{totalPages}</strong></div>
                     <div className="flex items-center space-x-1">
-                      <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="p-1.5 rounded border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-30 cursor-pointer"><ChevronLeft className="w-4 h-4" /></button>
-                      <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-30 cursor-pointer"><ChevronRight className="w-4 h-4" /></button>
+                      <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="p-1.5 rounded border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-30 cursor-pointer"><Icon name="chevronLeft" className="w-4 h-4" /></button>
+                      <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded border border-slate-200 text-slate-600 hover:bg-white disabled:opacity-30 cursor-pointer"><Icon name="chevronRight" className="w-4 h-4" /></button>
                     </div>
                   </div>
                 </div>
@@ -620,14 +643,14 @@
               <div className="space-y-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm sticky top-16 z-20">
                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input type="text" placeholder="Search contacts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white text-slate-900" />
                     </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredClients.filter(c => c.mobile || c.email).length === 0 ? (
                     <div className="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
-                      <Users className="w-10 h-10 mx-auto mb-3 text-slate-300" /><p className="text-sm font-medium text-slate-600">No contacts found</p>
+                      <Icon name="users" className="w-10 h-10 mx-auto mb-3 text-slate-300" /><p className="text-sm font-medium text-slate-600">No contacts found</p>
                     </div>
                   ) : (
                     filteredClients.filter(c => c.mobile || c.email).map(client => (
@@ -642,8 +665,8 @@
                           </div>
                         </div>
                         <div className="flex items-center space-x-1 border-l border-slate-100 pl-2 shrink-0">
-                          <a href={getPhoneLink(client.mobile, 'call')} className="p-2.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"><Phone className="w-4 h-4" /></a>
-                          <a href={getPhoneLink(client.mobile, 'wa')} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"><MessageCircle className="w-4 h-4" /></a>
+                          <a href={getPhoneLink(client.mobile, 'call')} className="p-2.5 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"><Icon name="phone" className="w-4 h-4" /></a>
+                          <a href={getPhoneLink(client.mobile, 'wa')} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"><Icon name="messageCircle" className="w-4 h-4" /></a>
                         </div>
                       </div>
                     ))
@@ -694,17 +717,37 @@
             )}
           </main>
 
-          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-around items-center pt-1 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-500'}`}><BarChart3 className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">Dash</span></button>
-            <button onClick={() => setActiveTab('directory')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'directory' ? 'text-indigo-600' : 'text-slate-500'}`}><List className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">List</span></button>
-            <div className="relative -top-5">
-               <button onClick={openAddModal} className="bg-indigo-600 text-white p-3.5 rounded-full shadow-lg shadow-indigo-200 flex items-center justify-center"><Plus className="w-6 h-6" /></button>
+          {/* 📱 SLEEK CORPORATE BOTTOM NAV 📱 */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-between items-center px-4 pb-2 pt-2 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+            <button onClick={() => setActiveTab('analytics')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="barChart" className="w-6 h-6 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'analytics' ? 'font-bold' : 'font-medium'}`}>Dash</span>
+            </button>
+            
+            <button onClick={() => setActiveTab('directory')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'directory' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="list" className="w-6 h-6 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'directory' ? 'font-bold' : 'font-medium'}`}>List</span>
+            </button>
+
+            {/* FLOATING ACTION BUTTON */}
+            <div className="relative -top-6">
+               <button onClick={openAddModal} className="bg-indigo-600 hover:bg-indigo-700 text-white p-3.5 rounded-full shadow-lg shadow-indigo-300 ring-[6px] ring-white transition-transform active:scale-95 flex items-center justify-center">
+                 <Icon name="plus" className="w-6 h-6" />
+               </button>
             </div>
-            <button onClick={() => setActiveTab('contacts')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'contacts' ? 'text-indigo-600' : 'text-slate-500'}`}><Phone className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">Call</span></button>
-            <button onClick={() => setActiveTab('kanban')} className={`flex flex-col items-center p-2 w-16 transition-colors ${activeTab === 'kanban' ? 'text-indigo-600' : 'text-slate-500'}`}><LayoutGrid className="w-6 h-6 mb-1" /><span className="text-[10px] font-medium">Board</span></button>
+
+            <button onClick={() => setActiveTab('contacts')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'contacts' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="phone" className="w-6 h-6 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'contacts' ? 'font-bold' : 'font-medium'}`}>Call</span>
+            </button>
+            
+            <button onClick={() => setActiveTab('kanban')} className={`flex flex-col items-center p-2 transition-colors ${activeTab === 'kanban' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="grid" className="w-6 h-6 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'kanban' ? 'font-bold' : 'font-medium'}`}>Board</span>
+            </button>
           </div>
 
-          {/* Drawers and Modals (Detail, Edit/Add, Delete) */}
+          {/* Drawers and Modals */}
           {isDetailOpen && selectedClient && (
             <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm flex justify-end">
               <div className="w-full max-w-md bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col justify-between animate-in slide-in-from-right duration-300">
@@ -713,7 +756,7 @@
                     <span className="text-xs font-mono font-bold text-indigo-600">{selectedClient.clientId}</span>
                     <h3 className="text-base font-bold text-slate-900 leading-tight">{selectedClient.clientName}</h3>
                   </div>
-                  <button onClick={() => setIsDetailOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 transition-colors"><X className="w-5 h-5" /></button>
+                  <button onClick={() => setIsDetailOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 transition-colors"><Icon name="x" className="w-5 h-5" /></button>
                 </div>
 
                 <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs pb-32">
@@ -721,8 +764,8 @@
                      <div className="flex gap-2 mb-4">
                         {selectedClient.mobile && (
                           <>
-                            <a href={getPhoneLink(selectedClient.mobile, 'call')} className="flex-1 bg-blue-50 text-blue-700 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold hover:bg-blue-100 transition-colors"><Phone className="w-4 h-4" /> Call</a>
-                            <a href={getPhoneLink(selectedClient.mobile, 'wa')} target="_blank" rel="noopener noreferrer" className="flex-1 bg-emerald-50 text-emerald-700 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold hover:bg-emerald-100 transition-colors"><MessageCircle className="w-4 h-4" /> WhatsApp</a>
+                            <a href={getPhoneLink(selectedClient.mobile, 'call')} className="flex-1 bg-blue-50 text-blue-700 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold hover:bg-blue-100 transition-colors"><Icon name="phone" className="w-4 h-4" /> Call</a>
+                            <a href={getPhoneLink(selectedClient.mobile, 'wa')} target="_blank" rel="noopener noreferrer" className="flex-1 bg-emerald-50 text-emerald-700 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold hover:bg-emerald-100 transition-colors"><Icon name="messageCircle" className="w-4 h-4" /> WhatsApp</a>
                           </>
                         )}
                      </div>
@@ -735,23 +778,23 @@
                   
                   <div>
                     <h4 className="text-[11px] font-bold flex items-center gap-1.5 text-fuchsia-600 uppercase tracking-wider mb-2">
-                      <Bot className="w-3.5 h-3.5" /> Gemini AI Assistant
+                      <Icon name="bot" className="w-3.5 h-3.5" /> Gemini AI Assistant
                     </h4>
                     <div className="space-y-2 bg-gradient-to-br from-fuchsia-50/50 to-purple-50/50 p-3 rounded-xl border border-fuchsia-100">
                       <div className="flex flex-wrap gap-2">
                          <button onClick={() => draftEmailWithAI(selectedClient, 'check_in')} disabled={isAILoading} className="bg-white border border-fuchsia-200 text-fuchsia-700 hover:bg-fuchsia-100 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50">
-                           <Wand2 className="w-3 h-3" /> Draft Check-in Email
+                           <Icon name="wand" className="w-3 h-3" /> Draft Check-in Email
                          </button>
                          {(!selectedClient.pan || !selectedClient.gstin || selectedClient.pan === 'PANNOTREQD' || selectedClient.gstin === 'N/A') && (
                             <button onClick={() => draftEmailWithAI(selectedClient, 'missing_tax')} disabled={isAILoading} className="bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50">
-                             <AlertCircle className="w-3 h-3" /> Request Tax Docs
+                             <Icon name="alert" className="w-3 h-3" /> Request Tax Docs
                            </button>
                          )}
                       </div>
                       
                       {isAILoading && (
                          <div className="flex items-center justify-center py-4 text-fuchsia-600">
-                           <Loader2 className="w-5 h-5 animate-spin" />
+                           <Spinner className="w-5 h-5 animate-spin" />
                            <span className="ml-2 font-medium">Gemini is thinking...</span>
                          </div>
                       )}
@@ -760,7 +803,7 @@
                         <div className="mt-3 relative">
                            <textarea readOnly value={aiResponse} className="w-full text-xs p-3 bg-white border border-fuchsia-200 rounded-lg min-h-[100px] text-slate-700 focus:outline-none" />
                            <button onClick={() => { copyToClipboard(aiResponse, 'aiEmail'); }} className="absolute top-2 right-2 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition-colors cursor-pointer" title="Copy to clipboard">
-                             {copiedField === 'aiEmail' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                             {copiedField === 'aiEmail' ? <Icon name="check" className="w-3 h-3 text-emerald-600" /> : <Icon name="copy" className="w-3 h-3" />}
                            </button>
                         </div>
                       )}
@@ -778,8 +821,8 @@
                 </div>
 
                 <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center space-x-2 pb-6 absolute bottom-0 left-0 right-0 w-full">
-                  <button onClick={(e) => openEditModal(selectedClient, e)} className="flex-1 flex items-center justify-center space-x-1.5 bg-indigo-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors"><Edit3 className="w-4 h-4" /><span>Edit Record</span></button>
-                  <button onClick={() => setDeleteCandidate(selectedClient)} className="p-2.5 border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"><Trash2 className="w-5 h-5" /></button>
+                  <button onClick={(e) => openEditModal(selectedClient, e)} className="flex-1 flex items-center justify-center space-x-1.5 bg-indigo-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors"><Icon name="edit" className="w-4 h-4" /><span>Edit Record</span></button>
+                  <button onClick={() => setDeleteCandidate(selectedClient)} className="p-2.5 border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"><Icon name="trash" className="w-5 h-5" /></button>
                 </div>
               </div>
             </div>
@@ -791,22 +834,22 @@
                 <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                      {editingClient ? <Edit3 className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                      {editingClient ? <Icon name="edit" className="w-4 h-4" /> : <Icon name="userPlus" className="w-4 h-4" />}
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-slate-900">{editingClient ? `Edit ${formData.clientId}` : 'Register Client'}</h3>
                     </div>
                   </div>
-                  <button onClick={() => setIsFormOpen(false)} className="p-1 text-slate-400"><X className="w-5 h-5" /></button>
+                  <button onClick={() => setIsFormOpen(false)} className="p-1 text-slate-400"><Icon name="x" className="w-5 h-5" /></button>
                 </div>
 
                 <form onSubmit={handleFormSubmit} className="p-4 sm:p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
                   {!editingClient && 'contacts' in navigator && (
-                    <button type="button" onClick={handleImportContact} className="w-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 py-3 rounded-xl border border-indigo-200 font-bold mb-4 cursor-pointer hover:bg-indigo-100"><Smartphone className="w-4 h-4" /> Import from Phone</button>
+                    <button type="button" onClick={handleImportContact} className="w-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 py-3 rounded-xl border border-indigo-200 font-bold mb-4 cursor-pointer hover:bg-indigo-100"><Icon name="smartphone" className="w-4 h-4" /> Import from Phone</button>
                   )}
                   
                   <button type="button" onClick={() => setShowAIInput(!showAIInput)} className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-50 to-fuchsia-50 text-fuchsia-700 py-3 rounded-xl border border-fuchsia-200 font-bold mb-4 shadow-sm hover:bg-fuchsia-100 transition-colors cursor-pointer">
-                     <Sparkles className="w-4 h-4" /> Magic Autofill with Gemini AI
+                     <Icon name="sparkles" className="w-4 h-4" /> Magic Autofill with Gemini AI
                   </button>
                   
                   {showAIInput && (
@@ -815,7 +858,7 @@
                       <textarea value={aiInputText} onChange={(e) => setAiInputText(e.target.value)} placeholder="e.g. Add John Smith from Acme Corp, phone 9998887777, email john@acme.com, GSTIN 29ABCDE1234F1Z5" className="w-full p-2.5 text-xs border border-fuchsia-200 rounded-lg focus:ring-2 focus:ring-fuchsia-500 bg-white min-h-[60px] outline-none" />
                       <div className="flex justify-end">
                         <button type="button" onClick={handleAIAutofill} disabled={isAILoading} className="bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 cursor-pointer transition-colors shadow-sm">
-                          {isAILoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />} Process Text
+                          {isAILoading ? <Spinner className="w-3.5 h-3.5 animate-spin" /> : <Icon name="wand" className="w-3.5 h-3.5" />} Process Text
                         </button>
                       </div>
                     </div>
@@ -873,7 +916,7 @@
           {deleteCandidate && (
             <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
-                <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4"><Trash2 className="w-6 h-6" /></div>
+                <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4"><Icon name="trash" className="w-6 h-6" /></div>
                 <h3 className="text-base font-bold text-slate-900 text-center">Delete Client Record?</h3>
                 <div className="mt-6 flex items-center space-x-2">
                   <button onClick={() => setDeleteCandidate(null)} className="flex-1 py-2 border border-slate-200 rounded-lg text-xs font-semibold">Cancel</button>
@@ -894,11 +937,28 @@
       const [loading, setLoading] = useState(true);
       const [user, setUser] = useState(null);
       const [fb, setFb] = useState(null); 
+      const [isMockMode, setIsMockMode] = useState(false);
+      const [showDemoButton, setShowDemoButton] = useState(false);
 
       useEffect(() => {
         const rawLoader = document.getElementById('fallback-loader');
         if (rawLoader) rawLoader.style.display = 'none';
       }, []);
+
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          if (loading) setShowDemoButton(true);
+        }, 5000);
+        return () => clearTimeout(timer);
+      }, [loading]);
+
+      const activateDemoMode = () => {
+        setIsMockMode(true);
+        setData([
+          { id: '1', clientId: 'C40001', clientName: 'Demo Client (Acme Corp)', mobile: '9876543210', email: 'admin@acme.test', constitution: 'Private Limited', status: 'Active', pan: 'ABCDE1234F', gstin: '29ABCDE1234F1Z5', branchId: 'HQ' }
+        ]);
+        setLoading(false);
+      };
 
       useEffect(() => {
         let unsubscribeAuth = null;
@@ -908,7 +968,6 @@
           try {
             await window.firebaseLoadPromise;
             const FB = window.FirebaseAPI;
-            
             const config = MY_FIREBASE_CONFIG;
             const appId = config.appId;
             const app = FB.initializeApp(config);
@@ -932,13 +991,14 @@
                     setData(clientsList);
                     setLoading(false);
                  }, (err) => {
-                    document.getElementById('fallback-loader').innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 Firestore Permission Denied:</b><br><br>Did you enable Anonymous Auth in your Firebase Console?</div>';
+                    console.warn("Firestore error:", err);
+                    activateDemoMode();
                  });
               }
             });
           } catch (e) {
-             console.error(e);
-             document.getElementById('fallback-loader').innerHTML = '<div style="padding:20px;color:#dc2626;text-align:left;font-family:monospace;font-size:12px;background:#fef2f2;min-height:100vh;"><b>🚨 Initialization Error:</b><br><br>' + e.message + '</div>';
+             console.warn("Firebase Init error:", e);
+             activateDemoMode();
           }
         };
         
@@ -951,7 +1011,7 @@
       }, []);
 
       const insertItem = async (clientData) => {
-         if (!fb || !user) return;
+         if (isMockMode || !fb || !user) { setData(prev => [...prev, { ...clientData, id: Date.now().toString() }]); return; }
          try {
              const collRef = fb.collection(fb.db, 'artifacts', fb.appId, 'users', user.uid, 'clients');
              await fb.addDoc(collRef, { ...clientData, createdAt: new Date().toISOString() });
@@ -959,7 +1019,7 @@
       };
       
       const updateItem = async (clientData) => {
-         if (!fb || !user) return;
+         if (isMockMode || !fb || !user) { setData(prev => prev.map(c => c.id === clientData.id ? clientData : c)); return; }
          try {
              const { id, ...dataToUpdate } = clientData;
              const docRef = fb.doc(fb.db, 'artifacts', fb.appId, 'users', user.uid, 'clients', id);
@@ -969,7 +1029,7 @@
       };
       
       const deleteItem = async (id) => {
-         if (!fb || !user) return;
+         if (isMockMode || !fb || !user) { setData(prev => prev.filter(c => c.id !== id)); return; }
          try {
              const docRef = fb.doc(fb.db, 'artifacts', fb.appId, 'users', user.uid, 'clients', id);
              await fb.deleteDoc(docRef);
@@ -978,14 +1038,22 @@
       
       if (loading) {
         return (
-           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-              <Loader2 className="animate-spin text-indigo-600 w-10 h-10" />
+           <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4 p-4 text-center">
+              <Spinner className="animate-spin text-indigo-600 w-10 h-10" />
               <p className="text-slate-500 font-medium text-sm animate-pulse">Connecting to Secure CRM Database...</p>
+              {showDemoButton && (
+                <div className="mt-4 animate-in fade-in duration-300">
+                  <p className="text-xs text-amber-600 mb-2">Taking longer than usual? (Check Anonymous Auth in Firebase)</p>
+                  <button onClick={activateDemoMode} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-indigo-700 transition-colors cursor-pointer">
+                    Launch CRM in Offline Mode 🚀
+                  </button>
+                </div>
+              )}
            </div>
         );
       }
 
-      return <App data={data} insertItem={insertItem} updateItem={updateItem} deleteItem={deleteItem} />;
+      return <App data={data} insertItem={insertItem} updateItem={updateItem} deleteItem={deleteItem} isMockMode={isMockMode} />;
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
