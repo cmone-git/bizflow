@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CM ADMIN - ClientHub CRM</title>
+  
+  <!-- PWA & BRANDING ASSETS -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#312e81">
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed: ', err));
+      });
+    }
+  </script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script>window.react = window.React;</script>
+  
+  <!-- Babel Standalone -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
+
+  <!-- Firebase Loading Sequence -->
+  <script type="module">
+    window.firebaseLoadPromise = (async () => {
+      try {
+        const appMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+        const authMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+        const fsMod = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        
+        window.FirebaseAPI = {
+          initializeApp: appMod.initializeApp, 
+          getAuth: authMod.getAuth, 
+          signInWithEmailAndPassword: authMod.signInWithEmailAndPassword,
+          createUserWithEmailAndPassword: authMod.createUserWithEmailAndPassword,
+          signInWithPopup: authMod.signInWithPopup,
+          GoogleAuthProvider: authMod.GoogleAuthProvider,
+          signOut: authMod.signOut,
+          onAuthStateChanged: authMod.onAuthStateChanged,
+          getFirestore: fsMod.getFirestore, collection: fsMod.collection, doc: fsMod.doc, 
+          addDoc: fsMod.addDoc, updateDoc: fsMod.updateDoc, deleteDoc: fsMod.deleteDoc, 
+          onSnapshot: fsMod.onSnapshot, setDoc: fsMod.setDoc
+        };
+      } catch (err) {
+        console.error("Firebase load error:", err);
+      }
+    })();
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-indigo-200">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect, useRef } = React;
+
+    // ==========================================
+    // CORPORATE SVG ICONS
+    // ==========================================
+    const Icon = ({ name, className = "w-5 h-5" }) => {
+      const paths = {
+        users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        barChart: <><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></>,
+        list: <><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>,
+        phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>,
+        grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></>,
+        plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+        search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+        x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+        edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+        trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>,
+        shieldCheck: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></>,
+        database: <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>,
+        upload: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>,
+        download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+        fileText: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+        key: <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>,
+        menu: <><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>,
+        clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+        checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+        building: <><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></>,
+        qrCode: <><rect x="3" y="3" width="5" height="5" rx="1" ry="1"/><rect x="16" y="3" width="5" height="5" rx="1" ry="1"/><rect x="3" y="16" width="5" height="5" rx="1" ry="1"/><path d="M21 16h-3v3h3z"/><path d="M12 3v5"/><path d="M12 16v5"/><path d="M3 12h18"/></>,
+        indianRupee: <><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13l8.5 8"/><path d="M6 13h3c3.314 0 6-2.686 6-6s-2.686-6-6-6"/></>,
+        chevronLeft: <polyline points="15 18 9 12 15 6"/>,
+        chevronRight: <polyline points="9 18 15 12 9 6"/>,
+        copy: <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+        check: <polyline points="20 6 9 17 4 12"/>,
+        sparkles: <><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M20.5 5.5 19 9l-1.5-3.5L14 4l3.5-1.5L19 2l1.5 3.5L24 7l-3.5 1.5Z"/></>,
+        messageCircle: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>,
+        eye: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>,
+        eyeOff: <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>,
+        logOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>
+      };
+      return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{paths[name] || paths.list}</svg>;
+    };
+
+    const Spinner = ({ className = "w-5 h-5 animate-spin" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    );
+
+    // ==========================================
+    // DONUT CHART COMPONENT
+    // ==========================================
+    const DonutChart = ({ data }) => {
+      const total = data.reduce((acc, item) => acc + (Number(item.value)||0), 0);
+      let cumulativePercent = 0;
+
+      if (total === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center h-40">
+            <Icon name="clock" className="w-10 h-10 text-slate-200 mb-2" />
+            <span className="text-xs text-slate-400 font-medium">No Tasks Logged</span>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex items-center gap-6">
+          <svg viewBox="0 0 36 36" className="w-32 h-32 transform -rotate-90">
+            {data.map((slice, i) => {
+              const percent = ((Number(slice.value)||0) / total) * 100;
+              const strokeDasharray = `${percent} ${100 - percent}`;
+              const strokeDashoffset = -cumulativePercent;
+              cumulativePercent += percent;
+              return <circle key={i} r="15.91549430918954" cx="18" cy="18" fill="transparent" stroke={slice.color} strokeWidth="4" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} className="transition-all duration-1000 ease-out" />;
+            })}
+          </svg>
+          <div className="flex flex-col gap-2 flex-1">
+            {data.map((slice, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: slice.color }}></span><span className="text-slate-600 font-semibold">{slice.label}</span></div>
+                <span className="font-bold text-slate-900">{slice.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // CONFIG
+    // ==========================================
+    const MY_FIREBASE_CONFIG = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.firebasestorage.app",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // ==========================================
+    // MAIN APPLICATION DASHBOARD (Loaded after Auth)
+    // ==========================================
+    function App({ clientsData, compliancesData, credentialsData, companyProfile, paymentLinks, insertRecord, updateRecord, deleteRecord, setCompanyProfile, currentUser, handleLogout }) {
+      
+      const isAdmin = currentUser?.role === 'admin';
+      
+      // Branch Filtering (Requirement 5)
+      const visibleClients = useMemo(() => isAdmin ? clientsData : clientsData.filter(c => c.branchId === currentUser?.assignedBranch), [clientsData, isAdmin, currentUser]);
+      const visibleCompliances = useMemo(() => isAdmin ? compliancesData : compliancesData.filter(c => visibleClients.some(vc => vc.clientId === c.ClientID)), [compliancesData, visibleClients, isAdmin]);
+      const visibleCredentials = useMemo(() => isAdmin ? credentialsData : credentialsData.filter(c => visibleClients.some(vc => vc.clientId === c.ClientID)), [credentialsData, visibleClients, isAdmin]);
+
+      const [activeTab, setActiveTab] = useState('analytics'); 
+      const [menuView, setMenuView] = useState('main'); 
+      
+      const [searchQuery, setSearchQuery] = useState('');
+      const [statusFilter, setStatusFilter] = useState('ALL');
+      const [sortField, setSortField] = useState('createdAt');
+      const [sortDirection, setSortDirection] = useState('desc');
+      const [currentPage, setCurrentPage] = useState(1);
+      const pageSize = 15;
+
+      const [selectedClient, setSelectedClient] = useState(null);
+      const [isDetailOpen, setIsDetailOpen] = useState(false);
+      const [detailViewTab, setDetailViewTab] = useState('overview'); 
+      
+      const [isFormOpen, setIsFormOpen] = useState(false);
+      const [isComplianceFormOpen, setIsComplianceFormOpen] = useState(false);
+      const [isCredentialFormOpen, setIsCredentialFormOpen] = useState(false);
+      const [editingItem, setEditingItem] = useState(null);
+      const [deleteCandidate, setDeleteCandidate] = useState(null);
+
+      const [toastMessage, setToastMessage] = useState(null);
+      const [copiedField, setCopiedField] = useState('');
+
+      // Form States
+      const [clientForm, setClientForm] = useState({ clientId: '', clientName: '', mobile: '', email: '', legalName: '', constitution: '', status: 'Active', pan: '', gstin: '', adhar: '', address: '', branchId: '', notes: '', folderUrl: '' });
+      const [compForm, setCompForm] = useState({ ComplianceID: '', Date: '', CompllianceName: '', ComplianceFrequency: '', PeriodOfCompliance: '', ClientID: '', ClientName: '', Priority: '', DueDate: '', StatusofCompliance: '', ProfessionalFee: '', ProformaInvoiceNo: '', PaymentStatus: '', ComplianceFolderUrl: '', AknNo: '', AknUrl: '', Comments: '' });
+      const [credForm, setCredForm] = useState({ CredentialID: '', ClientID: '', ClientName: '', PortalName: '', URL: '', Username: '', Password: '', Notes: '' });
+      const [companyForm, setCompanyForm] = useState({ companyName: '', email: '', phone: '', address: '', bankName: '', accNo: '', ifsc: '', upiId: '' });
+      const [qrForm, setQrForm] = useState({ clientId: '', mobile: '', amount: '' });
+      const [generatedQR, setGeneratedQR] = useState(null);
+
+      useEffect(() => { if(companyProfile) setCompanyForm(companyProfile); }, [companyProfile]);
+
+      const showToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
+
+      const getNextId = (dataArray, prefix) => {
+        if (!dataArray || !Array.isArray(dataArray)) return `${prefix}10001`;
+        let maxNum = 40000;
+        dataArray.forEach(c => {
+          const num = parseInt(String(c[`${prefix.toLowerCase()}Id`] || c[`${prefix}ID`] || '0').replace(/\D/g, ''), 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        });
+        return `${prefix}${maxNum + 1}`;
+      };
+
+      // KPIs
+      const kpis = useMemo(() => {
+        const total = visibleClients.length;
+        const active = visibleClients.filter(c => c.status === 'Active').length;
+        const noMobile = visibleClients.filter(c => !c.mobile || c.mobile.trim() === '').length;
+        return { total, active, activePct: total > 0 ? Math.round((active / total) * 100) : 0, noMobile };
+      }, [visibleClients]);
+
+      const compChartData = useMemo(() => {
+        let pending = 0, completed = 0, overdue = 0;
+        const today = new Date().toISOString().split('T')[0];
+        visibleCompliances.forEach(c => {
+          if (c.StatusofCompliance === 'Completed') completed++;
+          else if (c.DueDate && c.DueDate < today) overdue++;
+          else pending++;
+        });
+        return [
+          { label: 'Completed', value: completed, color: '#10b981' }, 
+          { label: 'Pending Task', value: pending, color: '#6366f1' },    
+          { label: 'Overdue', value: overdue, color: '#ef4444' }     
+        ];
+      }, [visibleCompliances]);
+
+      // Global Filtering (Requirement 3 & 7)
+      const filteredClients = useMemo(() => {
+        return visibleClients.filter(c => {
+          if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            const matchClient = [c.clientName, c.clientId, c.mobile, c.email, c.pan, c.adhar].some(val => String(val||'').toLowerCase().includes(q));
+            if (!matchClient) return false;
+          }
+          if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
+          return true;
+        });
+      }, [visibleClients, searchQuery, statusFilter]);
+
+      const filteredCompliances = useMemo(() => {
+        return visibleCompliances.filter(c => {
+          if (searchQuery) {
+             const q = searchQuery.toLowerCase();
+             const linkedClient = visibleClients.find(vc => vc.clientId === c.ClientID) || {};
+             const match = [c.CompllianceName, c.ComplianceID, c.ClientName, c.ClientID, linkedClient.pan, linkedClient.adhar, linkedClient.mobile].some(val => String(val||'').toLowerCase().includes(q));
+             if(!match) return false;
+          }
+          return true;
+        });
+      }, [visibleCompliances, visibleClients, searchQuery]);
+
+      const filteredCredentials = useMemo(() => {
+        return visibleCredentials.filter(c => {
+          if (searchQuery) {
+             const q = searchQuery.toLowerCase();
+             const linkedClient = visibleClients.find(vc => vc.clientId === c.ClientID) || {};
+             const match = [c.PortalName, c.ClientName, c.ClientID, linkedClient.pan, linkedClient.adhar, linkedClient.mobile].some(val => String(val||'').toLowerCase().includes(q));
+             if(!match) return false;
+          }
+          return true;
+        });
+      }, [visibleCredentials, visibleClients, searchQuery]);
+
+      // Sorting
+      const sortedClients = useMemo(() => {
+        return [...filteredClients].sort((a, b) => {
+          let valA = a[sortField] || ''; let valB = b[sortField] || '';
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+          if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }, [filteredClients, sortField, sortDirection]);
+
+      const paginatedClients = useMemo(() => {
+        const start = (currentPage - 1) * pageSize;
+        return sortedClients.slice(start, start + pageSize);
+      }, [sortedClients, currentPage, pageSize]);
+
+      useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter]);
+
+      // Save Handlers
+      const handleSaveClient = (e) => {
+        e.preventDefault();
+        if (editingItem) { updateRecord('clients', { ...clientForm, id: editingItem.id }); showToast("Client Updated"); } 
+        else { insertRecord('clients', clientForm); showToast("Client Created"); }
+        setIsFormOpen(false);
+      };
+
+      const handleSaveCompliance = (e) => {
+        e.preventDefault();
+        const linkedClient = visibleClients.find(c => c.clientId === compForm.ClientID);
+        const finalForm = { ...compForm, ClientName: linkedClient ? linkedClient.clientName : compForm.ClientName };
+        if (editingItem) { updateRecord('compliances', { ...finalForm, id: editingItem.id }); showToast("Task Updated"); } 
+        else { insertRecord('compliances', finalForm); showToast("Task Logged"); }
+        setIsComplianceFormOpen(false);
+      };
+
+      const handleSaveCredential = (e) => {
+        e.preventDefault();
+        const linkedClient = visibleClients.find(c => c.clientId === credForm.ClientID);
+        const finalForm = { ...credForm, ClientName: linkedClient ? linkedClient.clientName : credForm.ClientName };
+        if (editingItem) { updateRecord('credentials', { ...finalForm, id: editingItem.id }); showToast("Vault Updated"); } 
+        else { insertRecord('credentials', finalForm); showToast("Credentials Saved"); }
+        setIsCredentialFormOpen(false);
+      };
+
+      const handleSaveCompany = (e) => {
+         e.preventDefault(); setCompanyProfile(companyForm); showToast("Firm Profile Saved!"); setMenuView('main');
+      };
+
+      // QR Generator
+      const handleQRClientSelect = (e) => {
+         const cid = e.target.value;
+         const client = visibleClients.find(c => c.clientId === cid);
+         setQrForm({ ...qrForm, clientId: cid, mobile: client ? client.mobile : '' });
+      };
+
+      const generateQR = (e) => {
+         e.preventDefault();
+         if(!companyProfile?.upiId) { showToast("Error: Configure Firm UPI ID in Settings!"); return; }
+         const client = visibleClients.find(c => c.clientId === qrForm.clientId);
+         const cName = client ? client.clientName : 'Unknown';
+         const refNo = `QR${Date.now().toString().slice(-6)}`;
+         const upiString = `upi://pay?pa=${companyProfile.upiId}&pn=${encodeURIComponent(companyProfile.companyName || 'Firm')}&am=${qrForm.amount}&tr=${refNo}&cu=INR`;
+         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
+         setGeneratedQR({ url: qrUrl, refNo, amount: qrForm.amount, clientName: cName });
+         insertRecord('paymentLinks', { linkId: getNextId(paymentLinks, 'PAY'), clientId: qrForm.clientId, clientName: cName, mobile: qrForm.mobile, amount: qrForm.amount, status: 'Pending', qrRefNo: refNo });
+         showToast("QR Code Generated!");
+      };
+
+      const markQrPaid = (payItem) => {
+         updateRecord('paymentLinks', { ...payItem, status: 'Paid' }); showToast(`Payment ${payItem.qrRefNo} marked Paid!`);
+      };
+
+      // Modals
+      const openAddClient = () => { 
+        setEditingItem(null); 
+        setClientForm({ clientId: getNextId(clientsData, 'C'), clientName: '', mobile: '', email: '', legalName: '', constitution: 'Individual', status: 'Active', pan: '', gstin: '', adhar: '', address: '', branchId: currentUser?.assignedBranch || 'HQ', notes: '', folderUrl: '' }); 
+        setIsFormOpen(true); 
+      };
+      
+      const openEditModal = (client, e) => {
+        if (e) e.stopPropagation();
+        setEditingItem(client);
+        setClientForm({
+          clientId: client.clientId || '',
+          clientName: client.clientName || '',
+          mobile: client.mobile || '',
+          email: client.email || '',
+          legalName: client.legalName || '',
+          constitution: client.constitution || '',
+          status: client.status || 'Active',
+          pan: client.pan || '',
+          gstin: client.gstin || '',
+          adhar: client.adhar || '',
+          address: client.address || '',
+          branchId: client.branchId || '',
+          notes: client.notes || '',
+          folderUrl: client.folderUrl || ''
+        });
+        setIsFormOpen(true);
+      };
+
+      const openAddComp = () => { setEditingItem(null); setCompForm({ ComplianceID: getNextId(compliancesData, 'CMP'), Date: new Date().toISOString().split('T')[0], CompllianceName: '', ComplianceFrequency: 'Annually', PeriodOfCompliance: '', ClientID: '', ClientName: '', Priority: 'Medium', DueDate: '', StatusofCompliance: 'Pending', ProfessionalFee: '', ProformaInvoiceNo: '', PaymentStatus: 'Unpaid', ComplianceFolderUrl: '', AknNo: '', AknUrl: '', Comments: '' }); setIsComplianceFormOpen(true); };
+      const openAddCred = () => { setEditingItem(null); setCredForm({ CredentialID: getNextId(credentialsData, 'CRD'), ClientID: '', ClientName: '', PortalName: '', URL: '', Username: '', Password: '', Notes: '' }); setIsCredentialFormOpen(true); };
+      const openClientDetail = (client) => { setSelectedClient(client); setDetailViewTab('overview'); setIsDetailOpen(true); };
+
+      const confirmDelete = () => {
+        if (deleteCandidate) {
+          deleteRecord(deleteCandidate._collection, deleteCandidate.id);
+          showToast(`Record Deleted`); setDeleteCandidate(null);
+          if (selectedClient && selectedClient.id === deleteCandidate.id) setIsDetailOpen(false);
+        }
+      };
+
+      const copyToClipboard = (text, fieldName) => { if (!text) return; navigator.clipboard?.writeText(text); setCopiedField(fieldName); setTimeout(() => setCopiedField(''), 2000); };
+      const getPhoneLink = (phone, type) => { if (!phone) return '#'; let num = String(phone).replace(/\D/g, ''); if (num.length === 10) num = '91' + num; return type === 'call' ? `tel:+${num}` : `https://wa.me/${num}`; };
+      
+      const downloadCsv = (type) => {
+        let headers = ""; let sample = ""; let filename = "";
+        if (type === 'clients') {
+          headers = "ClientId,ClientName,Mobile,Email,LegalName,Constitution,Status,Pan,Gstin,Adhar,Address,BranchId,Notes,ClientFolderUrl\n";
+          sample = "C40001,Acme Corp,9876543210,contact@acme.com,Acme Corporation Ltd,Private Limited,Active,ABCDE1234F,29ABCDE1234F1Z5,,123 Main St,HQ,Notes,https://drive.google.com/...\n";
+          filename = "Clients_Template.csv";
+        } else if (type === 'compliances') {
+          headers = "ComplianceID,Date,CompllianceName,ComplianceFrequency,PeriodOfCompliance,ClientID,ClientName,Priority,DueDate,StatusofCompliance,ProfessionalFee,ProformaInvoiceNo,PaymentStatus,ComplianceFolderUrl,AknNo,AknUrl,Comments\n";
+          sample = "CMP40001,2024-01-01,GST Return,Monthly,Jan 2024,C40001,Acme Corp,High,2024-01-20,Pending,5000,INV-101,Unpaid,,,AKN123,,Needs review\n";
+          filename = "Compliances_Template.csv";
+        } else {
+          headers = "CredentialID,ClientID,ClientName,PortalName,URL,Username,Password,Notes\n";
+          sample = "CRD40001,C40001,Acme Corp,Income Tax,https://incometax.gov.in,pan_number,SecurePass123!,Do not share\n";
+          filename = "Credentials_Template.csv";
+        }
+        const blob = new Blob([headers + sample], { type: 'text/csv' });
+        const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob); a.download = filename; a.click();
+      };
+
+      const handleCsvImport = (e, type) => {
+        if(e.target.files[0]) showToast(`${type} CSV Uploaded successfully! Backend integration required for full restore.`);
+        e.target.value = null;
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased pb-20">
+          
+          {toastMessage && (
+            <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm w-11/12 max-w-sm animate-in slide-in-from-top-4">
+              <Icon name="checkCircle" className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="truncate font-medium">{toastMessage}</span>
+            </div>
+          )}
+
+          {/* TOP HEADER */}
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <div className="flex items-center space-x-3">
+                  <img src="logo.png" alt="Logo" className="w-9 h-9 rounded-lg" onError={(e)=>{e.target.style.display='none'; e.target.nextSibling.style.display='flex';}} />
+                  <div className="hidden w-9 h-9 rounded-lg bg-indigo-600 items-center justify-center text-white shadow-md"><Icon name="users" className="w-5 h-5" /></div>
+                  <div>
+                    <h1 className="text-lg font-bold text-slate-900 leading-tight">CM ADMIN</h1>
+                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{isAdmin ? 'Corporate Edition' : `Branch: ${currentUser?.assignedBranch}`}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  {isAdmin && (
+                     <button onClick={openAddClient} className="hidden md:flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm">
+                       <Icon name="plus" className="w-4 h-4" /><span>Add Client</span>
+                     </button>
+                  )}
+                  <button onClick={handleLogout} className="text-slate-400 hover:text-rose-600 transition-colors" title="Logout"><Icon name="logOut" className="w-5 h-5" /></button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+            
+            {/* TAB 1: DASHBOARD */}
+            {activeTab === 'analytics' && (
+              <div className="space-y-6 animate-in fade-in">
+                
+                {/* Visual Dashboard Card (Restored Gradient) */}
+                <div className="bg-gradient-to-br from-indigo-900 via-violet-800 to-indigo-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                  <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none"><Icon name="users" className="w-64 h-64 text-white" /></div>
+                  <div className="relative z-10 max-w-2xl">
+                    <div className="inline-flex items-center gap-1.5 bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-xs px-2.5 py-1 rounded-full mb-3">
+                      <Icon name="sparkles" className="w-3.5 h-3.5" /><span>Real-time Portfolio Summary</span>
+                    </div>
+                    <h2 className="text-2xl font-extrabold tracking-tight">Client Portfolio Intelligence</h2>
+                    <p className="text-indigo-200 text-xs sm:text-sm mt-1 leading-relaxed">Managing {kpis.total} client records with {kpis.activePct}% active engagement rate across {isAdmin ? 'all registered branches' : 'your branch'}.</p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button onClick={() => setActiveTab('directory')} className="bg-white text-indigo-900 hover:bg-indigo-50 text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer">View All {kpis.total} Clients</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Portfolio</span><div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center"><Icon name="users" className="w-4 h-4" /></div></div>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold text-slate-900">{kpis.total}</div>
+                      <div className="flex items-center text-xs text-slate-500 mt-1"><span className="font-semibold text-emerald-600 flex items-center gap-0.5 mr-1"><Icon name="checkCircle" className="w-3 h-3" /> {kpis.active}</span>active clients registered</div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Status</span><div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><Icon name="checkCircle" className="w-4 h-4" /></div></div>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold text-slate-900">{kpis.activePct}%</div>
+                      <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${kpis.activePct}%` }} /></div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Missing Mobile Info</span><div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><Icon name="alert" className="w-4 h-4" /></div></div>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold text-slate-900">{kpis.noMobile}</div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 mt-1"><span>Clients without phone numbers</span></div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Balance</span><div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><Icon name="indianRupee" className="w-4 h-4" /></div></div>
+                    <div className="mt-3">
+                      <div className="text-3xl font-extrabold text-slate-900">₹{visibleCompliances.filter(c=>c.PaymentStatus==='Unpaid').reduce((a,b)=>a+(Number(b.ProfessionalFee)||0),0)}</div>
+                      <div className="text-xs text-slate-500 mt-1">Total unpaid compliances</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div onClick={()=>setActiveTab('compliances')} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col cursor-pointer hover:border-indigo-300 transition-colors">
+                    <div className="flex items-center justify-between mb-6">
+                       <span className="text-sm font-bold text-slate-900">Task / Compliance Health</span>
+                       <button className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg">View All</button>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center"><DonutChart data={compChartData} /></div>
+                  </div>
+                  
+                  <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                       <span className="text-sm font-bold text-slate-900">Recent Tasks</span>
+                       <button onClick={()=>setActiveTab('compliances')} className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg">View All</button>
+                    </div>
+                    <div className="space-y-3 flex-1 overflow-y-auto max-h-48 pr-2">
+                       {visibleCompliances.slice(0, 4).map(c => (
+                          <div key={c.id} className="p-3 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50 transition-colors">
+                             <div>
+                                <div className="font-bold text-slate-900 text-sm">{c.CompllianceName}</div>
+                                <div className="text-[10px] text-slate-500 font-mono mt-0.5">{c.ClientName}</div>
+                             </div>
+                             <div className={`px-2 py-1 rounded text-[10px] font-bold ${c.StatusofCompliance === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-600'}`}>{c.StatusofCompliance}</div>
+                          </div>
+                       ))}
+                       {visibleCompliances.length === 0 && <p className="text-center text-slate-400 text-sm py-4">No tasks yet.</p>}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* TAB: DIRECTORY */}
+            {activeTab === 'directory' && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                  <div className="relative">
+                    <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type="text" placeholder="Search by Client ID, Name, Mobile, Email, PAN, Adhar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">Status Filter</label>
+                      <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full text-xs bg-slate-50 border border-slate-200 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700">
+                        <option value="ALL">All Statuses</option><option value="Active">Active Only</option><option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-1">Sort By</label>
+                      <select value={`${sortField}-${sortDirection}`} onChange={(e) => { const [f, d] = e.target.value.split('-'); setSortField(f); setSortDirection(d); }} className="w-full text-xs bg-slate-50 border border-slate-200 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700">
+                        <option value="createdAt-desc">Date Added (Newest)</option>
+                        <option value="clientId-asc">Client ID (A-Z)</option>
+                        <option value="clientName-asc">Name (A-Z)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-600 min-w-[800px]">
+                      <thead className="bg-slate-50 text-slate-500 uppercase font-semibold text-[10px] border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-3">Client ID</th>
+                          <th className="px-4 py-3">Client Name</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Contact Info</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {paginatedClients.map((client) => (
+                          <tr key={client.id} onClick={() => openClientDetail(client)} className="hover:bg-indigo-50 cursor-pointer transition-colors">
+                            <td className="px-4 py-3 font-mono font-bold text-indigo-600">{client.clientId}</td>
+                            <td className="px-4 py-3 font-bold text-slate-900">{client.clientName}</td>
+                            <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${client.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{client.status}</span></td>
+                            <td className="px-4 py-3 font-mono text-[11px]">{client.mobile ? `+91 ${client.mobile}` : '---'}</td>
+                            <td className="px-4 py-3 text-right">
+                              {isAdmin && <button onClick={(e) => openEditModal(client, e)} className="p-1.5 text-slate-400 hover:text-indigo-600"><Icon name="edit" className="w-4 h-4" /></button>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: COMPLIANCES */}
+            {activeTab === 'compliances' && (
+              <div className="space-y-4 animate-in fade-in">
+                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center mb-2">
+                       <div><h2 className="font-bold text-slate-900 text-lg">Task Tracker</h2></div>
+                       {isAdmin && <button onClick={openAddComp} className="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md hover:bg-indigo-700"><Icon name="plus" className="w-5 h-5" /></button>}
+                    </div>
+                    <div className="relative">
+                      <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" placeholder="Search tasks, client name, PAN, Adhar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" />
+                    </div>
+                 </div>
+
+                 <div className="space-y-3">
+                    {filteredCompliances.map(comp => (
+                       <div key={comp.id} onClick={() => { if(isAdmin){ setEditingItem(comp); setCompForm({...comp}); setIsComplianceFormOpen(true); } }} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-300">
+                          <div className="flex justify-between items-start mb-2">
+                             <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{comp.ComplianceID}</span>
+                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${comp.StatusofCompliance === 'Completed' ? 'bg-emerald-50 text-emerald-600' : comp.StatusofCompliance === 'Pending' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>{comp.StatusofCompliance}</span>
+                          </div>
+                          <h4 className="font-extrabold text-slate-900">{comp.CompllianceName}</h4>
+                          <div className="text-xs font-semibold text-slate-600 mt-1">{comp.ClientName}</div>
+                          
+                          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
+                             <div className="flex items-center gap-1"><Icon name="clock" className="w-3.5 h-3.5" /> Due: {comp.DueDate || 'N/A'}</div>
+                             <div className="flex items-center gap-1"><Icon name="indianRupee" className="w-3.5 h-3.5" /> Fee: ₹{comp.ProfessionalFee || '0'}</div>
+                             <div className={`px-1.5 py-0.5 rounded ${comp.PaymentStatus==='Paid'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}`}>{comp.PaymentStatus}</div>
+                          </div>
+                       </div>
+                    ))}
+                    {filteredCompliances.length === 0 && <div className="py-12 text-center text-slate-400 font-medium">No tasks found.</div>}
+                 </div>
+              </div>
+            )}
+
+            {/* TAB 3: CREDENTIALS VAULT */}
+            {activeTab === 'credentials' && (
+              <div className="space-y-4 animate-in fade-in">
+                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex justify-between items-center mb-2">
+                       <div><h2 className="font-bold text-slate-900 text-lg">Secure Vault</h2></div>
+                       {isAdmin && <button onClick={openAddCred} className="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md hover:bg-indigo-700"><Icon name="plus" className="w-5 h-5" /></button>}
+                    </div>
+                    <div className="relative">
+                      <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" placeholder="Search portals, clients, PAN, Adhar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" />
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {filteredCredentials.map(cred => (
+                       <div key={cred.id} onClick={() => { if(isAdmin){ setEditingItem(cred); setCredForm({...cred}); setIsCredentialFormOpen(true); } }} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-300 flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center shrink-0"><Icon name="key" className="w-6 h-6" /></div>
+                          <div className="overflow-hidden flex-1">
+                             <h4 className="font-bold text-slate-900 truncate">{cred.PortalName || 'Unnamed Portal'}</h4>
+                             <div className="text-xs font-semibold text-slate-600 truncate mt-0.5">{cred.ClientName || 'Unknown Client'}</div>
+                             <div className="text-[10px] text-slate-400 font-mono mt-1 truncate">User: {cred.Username || '---'}</div>
+                          </div>
+                       </div>
+                    ))}
+                    {filteredCredentials.length === 0 && <div className="col-span-full py-12 text-center text-slate-400 font-medium">Vault is empty.</div>}
+                 </div>
+              </div>
+            )}
+
+            {/* TAB 4: CALL / CONTACTS */}
+            {activeTab === 'contacts' && (
+              <div className="space-y-4 animate-in fade-in">
+                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="relative">
+                      <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input type="text" placeholder="Search contacts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" />
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    {filteredClients.filter(c => c.mobile).map(c => (
+                       <div key={c.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                          <div onClick={() => openClientDetail(c)} className="cursor-pointer">
+                             <h4 className="font-bold text-slate-900">{c.clientName}</h4>
+                             <p className="text-xs font-mono text-slate-500 mt-1">+91 {c.mobile}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <a href={getPhoneLink(c.mobile, 'wa')} target="_blank" className="bg-emerald-50 text-emerald-600 p-3 rounded-xl hover:bg-emerald-100 transition-colors"><Icon name="messageCircle" className="w-5 h-5" /></a>
+                            <a href={getPhoneLink(c.mobile, 'call')} className="bg-blue-50 text-blue-600 p-3 rounded-xl hover:bg-blue-100 transition-colors"><Icon name="phone" className="w-5 h-5" /></a>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+            )}
+
+            {/* TAB 5: MENU */}
+            {activeTab === 'menu' && (
+              <div className="space-y-6 animate-in fade-in">
+                 {menuView === 'main' && (
+                    <div className="space-y-4">
+                       <h2 className="font-extrabold text-slate-900 text-xl px-1">Menu & Tools</h2>
+                       {isAdmin && (
+                         <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => setMenuView('company')} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 hover:border-indigo-400 transition-colors">
+                               <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center"><Icon name="building" className="w-6 h-6" /></div>
+                               <span className="font-bold text-sm text-slate-800">Firm Profile</span>
+                            </button>
+                            <button onClick={() => setMenuView('billing')} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3 hover:border-indigo-400 transition-colors">
+                               <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center"><Icon name="qrCode" className="w-6 h-6" /></div>
+                               <span className="font-bold text-sm text-slate-800">Billing & QR</span>
+                            </button>
+                         </div>
+                       )}
+
+                       {isAdmin && (
+                         <div>
+                            <h3 className="font-extrabold text-slate-400 text-[10px] uppercase tracking-wider mb-2 px-1 mt-6">Database CSV Tools</h3>
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                               {['clients', 'compliances', 'credentials'].map(type => (
+                                 <div key={type} className="p-4 border-b border-slate-100 flex items-center justify-between">
+                                    <span className="font-bold text-sm text-slate-700 capitalize">{type}</span>
+                                    <div className="flex gap-2">
+                                       <button onClick={() => downloadCsv(type)} className="p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-lg"><Icon name="download" className="w-4 h-4" /></button>
+                                    </div>
+                                 </div>
+                               ))}
+                            </div>
+                         </div>
+                       )}
+                       
+                       <button onClick={handleLogout} className="w-full bg-rose-50 text-rose-600 font-bold py-3 rounded-2xl border border-rose-100 mt-6 flex items-center justify-center gap-2 shadow-sm">
+                          <Icon name="logOut" className="w-5 h-5" /> Sign Out
+                       </button>
+                    </div>
+                 )}
+
+                 {menuView === 'company' && isAdmin && (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-right-4">
+                       <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50">
+                          <button onClick={() => setMenuView('main')} className="p-1 text-slate-500 hover:text-slate-900"><Icon name="chevronLeft" className="w-6 h-6" /></button>
+                          <h2 className="font-bold text-slate-900">Firm / Company Setup</h2>
+                       </div>
+                       <form onSubmit={handleSaveCompany} className="p-5 space-y-4 text-sm">
+                          <div><label className="block font-bold text-slate-700 mb-1">Company Name</label><input type="text" required value={companyForm.companyName || ''} onChange={e=>setCompanyForm({...companyForm, companyName:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" /></div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div><label className="block font-bold text-slate-700 mb-1">Email</label><input type="email" value={companyForm.email || ''} onChange={e=>setCompanyForm({...companyForm, email:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" /></div>
+                            <div><label className="block font-bold text-slate-700 mb-1">Phone</label><input type="tel" value={companyForm.phone || ''} onChange={e=>setCompanyForm({...companyForm, phone:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" /></div>
+                          </div>
+                          <div><label className="block font-bold text-slate-700 mb-1">Address</label><textarea value={companyForm.address || ''} onChange={e=>setCompanyForm({...companyForm, address:e.target.value})} rows={2} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" /></div>
+                          
+                          <div className="pt-4 border-t border-slate-100">
+                             <h4 className="font-extrabold text-[10px] uppercase text-slate-400 mb-3 tracking-wider">Banking & UPI</h4>
+                             <div className="space-y-4">
+                                <div><label className="block font-bold text-slate-700 mb-1">Bank Name</label><input type="text" value={companyForm.bankName || ''} onChange={e=>setCompanyForm({...companyForm, bankName:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500" /></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div><label className="block font-bold text-slate-700 mb-1">Account No.</label><input type="text" value={companyForm.accNo || ''} onChange={e=>setCompanyForm({...companyForm, accNo:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono" /></div>
+                                  <div><label className="block font-bold text-slate-700 mb-1">IFSC Code</label><input type="text" value={companyForm.ifsc || ''} onChange={e=>setCompanyForm({...companyForm, ifsc:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono uppercase" /></div>
+                                </div>
+                                <div><label className="block font-bold text-slate-700 mb-1">UPI ID (Required for QR)</label><input type="text" required placeholder="example@upi" value={companyForm.upiId || ''} onChange={e=>setCompanyForm({...companyForm, upiId:e.target.value})} className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono" /></div>
+                             </div>
+                          </div>
+                          <div className="pt-2"><button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 shadow-md">Save Firm Details</button></div>
+                       </form>
+                    </div>
+                 )}
+
+                 {menuView === 'billing' && isAdmin && (
+                    <div className="space-y-6 animate-in slide-in-from-right-4">
+                       <div className="flex items-center gap-3 px-1">
+                          <button onClick={() => setMenuView('main')} className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900"><Icon name="chevronLeft" className="w-5 h-5" /></button>
+                          <h2 className="font-extrabold text-slate-900 text-xl">Billing & QR Payments</h2>
+                       </div>
+                       
+                       <div>
+                          <h3 className="font-extrabold text-slate-400 text-[10px] uppercase tracking-wider mb-2 px-1">Pending Invoice Balances</h3>
+                          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-1 max-h-48 overflow-y-auto">
+                             {(compliancesData||[]).filter(c=>c.PaymentStatus==='Unpaid').map(comp => (
+                                <div key={comp.id} className="p-3 border-b border-slate-50 flex justify-between items-center text-xs">
+                                   <div>
+                                      <div className="font-bold text-slate-900">{comp.ClientName}</div>
+                                      <div className="text-slate-500">{comp.CompllianceName}</div>
+                                   </div>
+                                   <div className="text-right">
+                                      <div className="font-bold text-rose-600">₹{comp.ProfessionalFee || '0'}</div>
+                                      <div className="text-[9px] font-mono text-slate-400">{comp.ProformaInvoiceNo || 'No Inv'}</div>
+                                   </div>
+                                </div>
+                             ))}
+                             {(compliancesData||[]).filter(c=>c.PaymentStatus==='Unpaid').length === 0 && <div className="p-4 text-center text-xs text-slate-400 font-bold">No Pending Payments!</div>}
+                          </div>
+                       </div>
+
+                       <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-5 shadow-sm">
+                          <h3 className="font-extrabold text-emerald-800 mb-4 flex items-center gap-2"><Icon name="qrCode" className="w-5 h-5" /> Generate UPI Payment Link</h3>
+                          <form onSubmit={generateQR} className="space-y-3 text-sm">
+                             <div>
+                               <label className="block font-bold text-emerald-900 mb-1 text-xs">Select Client * (Searchable)</label>
+                               <input list="clients-qr-list" required placeholder="Type client name..." value={qrForm.clientId || ''} onChange={handleQRClientSelect} className="w-full p-2.5 border border-emerald-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500" />
+                               <datalist id="clients-qr-list">
+                                  {(clientsData||[]).map(c => <option key={c.clientId} value={c.clientId}>{c.clientName}</option>)}
+                               </datalist>
+                             </div>
+                             <div className="grid grid-cols-2 gap-3">
+                               <div><label className="block font-bold text-emerald-900 mb-1 text-xs">Mobile</label><input type="text" readOnly value={qrForm.mobile || ''} className="w-full p-2.5 border border-emerald-200 rounded-xl bg-emerald-100 text-emerald-800" /></div>
+                               <div><label className="block font-bold text-emerald-900 mb-1 text-xs">Amount (₹)</label><input type="number" required min="1" value={qrForm.amount || ''} onChange={e=>setQrForm({...qrForm, amount:e.target.value})} className="w-full p-2.5 border border-emerald-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 font-bold" /></div>
+                             </div>
+                             <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 shadow-md">Generate Dynamic QR</button>
+                          </form>
+
+                          {generatedQR && (
+                             <div className="mt-5 p-4 bg-white rounded-xl border border-emerald-100 flex flex-col items-center animate-in zoom-in-95">
+                                <img src={generatedQR.url} alt="Payment QR" className="w-40 h-40 rounded-lg shadow-sm mb-3" />
+                                <div className="text-center">
+                                   <div className="font-extrabold text-slate-900 text-lg">₹{generatedQR.amount}</div>
+                                   <div className="text-xs font-bold text-slate-500">Ref: {generatedQR.refNo}</div>
+                                </div>
+                             </div>
+                          )}
+                       </div>
+
+                       <div>
+                          <h3 className="font-extrabold text-slate-400 text-[10px] uppercase tracking-wider mb-2 px-1">Transaction Links Tracker</h3>
+                          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                             {[...(paymentLinks||[])].sort((a,b)=>String(b.qrRefNo||'').localeCompare(String(a.qrRefNo||''))).map(pay => (
+                                <div key={pay.id} className="p-4 border-b border-slate-100 flex items-center justify-between text-xs hover:bg-slate-50">
+                                   <div>
+                                      <div className="font-bold text-slate-900">{pay.clientName} <span className="text-slate-400 ml-1 font-mono">{pay.qrRefNo}</span></div>
+                                      <div className="text-slate-500 font-bold mt-0.5">₹{pay.amount}</div>
+                                   </div>
+                                   {pay.status === 'Pending' ? (
+                                      <button onClick={()=>markQrPaid(pay)} className="bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm">Mark Paid</button>
+                                   ) : (
+                                      <span className="bg-emerald-100 text-emerald-700 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1"><Icon name="checkCircle" className="w-3 h-3" /> Paid</span>
+                                   )}
+                                </div>
+                             ))}
+                             {(paymentLinks||[]).length === 0 && <div className="p-6 text-center text-xs text-slate-400 font-bold">No generated links yet.</div>}
+                          </div>
+                       </div>
+                    </div>
+                 )}
+
+              </div>
+            )}
+          </main>
+
+          {/* 📱 STANDARDIZED BOTTOM NAV 📱 */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-between items-center px-1 pb-safe pt-2 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+            <button onClick={() => {setActiveTab('analytics'); setMenuView('main');}} className={`flex flex-col items-center flex-1 p-1 transition-colors ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="barChart" className="w-5 h-5 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'analytics' ? 'font-extrabold' : 'font-semibold'}`}>Dashboard</span>
+            </button>
+            <button onClick={() => {setActiveTab('compliances'); setMenuView('main');}} className={`flex flex-col items-center flex-1 p-1 transition-colors ${activeTab === 'compliances' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="fileText" className="w-5 h-5 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'compliances' ? 'font-extrabold' : 'font-semibold'}`}>Tasks</span>
+            </button>
+            <button onClick={() => {setActiveTab('credentials'); setMenuView('main');}} className={`flex flex-col items-center flex-1 p-1 transition-colors ${activeTab === 'credentials' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="key" className="w-5 h-5 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'credentials' ? 'font-extrabold' : 'font-semibold'}`}>Vault</span>
+            </button>
+            <button onClick={() => {setActiveTab('contacts'); setMenuView('main');}} className={`flex flex-col items-center flex-1 p-1 transition-colors ${activeTab === 'contacts' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="phone" className="w-5 h-5 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'contacts' ? 'font-extrabold' : 'font-semibold'}`}>Call</span>
+            </button>
+            <button onClick={() => setActiveTab('menu')} className={`flex flex-col items-center flex-1 p-1 transition-colors ${activeTab === 'menu' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
+              <Icon name="menu" className="w-5 h-5 mb-1" />
+              <span className={`text-[10px] ${activeTab === 'menu' ? 'font-extrabold' : 'font-semibold'}`}>Menu</span>
+            </button>
+          </div>
+
+          {/* ========================================== */}
+          {/* MODALS */}
+          {/* ========================================== */}
+          {/* CLIENT DETAIL TABS */}
+          {isDetailOpen && selectedClient && (
+            <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm flex justify-end">
+              <div className="w-full max-w-md bg-slate-50 h-full shadow-2xl border-l border-slate-200 flex flex-col justify-between animate-in slide-in-from-right duration-300">
+                <div className="p-5 border-b border-slate-200 bg-white flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-mono font-bold text-indigo-600">{selectedClient.clientId}</span>
+                    <h3 className="text-lg font-extrabold text-slate-900 leading-tight truncate">{selectedClient.clientName}</h3>
+                  </div>
+                  <button onClick={() => setIsDetailOpen(false)} className="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors"><Icon name="x" className="w-5 h-5" /></button>
+                </div>
+
+                <div className="flex border-b border-slate-200 bg-white">
+                  <button onClick={() => setDetailViewTab('overview')} className={`flex-1 py-3 text-xs font-bold transition-colors ${detailViewTab === 'overview' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>Overview</button>
+                  <button onClick={() => setDetailViewTab('compliance')} className={`flex-1 py-3 text-xs font-bold transition-colors ${detailViewTab === 'compliance' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>Details</button>
+                  <button onClick={() => setDetailViewTab('credentials')} className={`flex-1 py-3 text-xs font-bold transition-colors ${detailViewTab === 'credentials' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>Vault & Notes</button>
+                </div>
+
+                <div className="p-5 overflow-y-auto space-y-6 flex-1 text-xs pb-32">
+                   {detailViewTab === 'overview' && (
+                     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2">
+                       {(selectedClient.mobile || selectedClient.email) && (
+                         <div className="flex gap-2 mb-2">
+                            {selectedClient.mobile && (
+                              <>
+                                <a href={getPhoneLink(selectedClient.mobile, 'call')} className="flex-1 bg-white border border-blue-200 text-blue-700 py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm hover:bg-blue-50 transition-colors"><Icon name="phone" className="w-4 h-4" /> Call</a>
+                                <a href={getPhoneLink(selectedClient.mobile, 'wa')} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white border border-emerald-200 text-emerald-700 py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-sm hover:bg-emerald-50 transition-colors"><Icon name="messageCircle" className="w-4 h-4" /> Message</a>
+                              </>
+                            )}
+                         </div>
+                       )}
+                       <div className="space-y-0 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                         <div className="flex items-center justify-between p-3.5 border-b border-slate-100"><span className="text-slate-500 font-semibold">Status</span><span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${selectedClient.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{selectedClient.status}</span></div>
+                         <div className="flex flex-col p-3.5 border-b border-slate-100 gap-1"><span className="text-slate-500 font-semibold mb-0.5">Mobile Number</span><div className="font-bold text-slate-900 text-sm">{selectedClient.mobile ? `+91 ${selectedClient.mobile}` : '—'}</div></div>
+                         <div className="flex flex-col p-3.5 gap-1"><span className="text-slate-500 font-semibold mb-0.5">Email Address</span><div className="font-bold text-slate-900 text-sm">{selectedClient.email || '—'}</div></div>
+                       </div>
+                     </div>
+                   )}
+                   {detailViewTab === 'compliance' && (
+                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                          <div className="flex flex-col p-4 border-b border-slate-100"><span className="text-slate-500 font-semibold mb-1">Legal Name</span><div className="font-bold text-slate-900">{selectedClient.legalName || '—'}</div></div>
+                          <div className="flex justify-between items-center p-4 border-b border-slate-100"><span className="text-slate-500 font-semibold">Constitution</span><span className="font-bold text-slate-900 bg-slate-50 px-2 py-1 rounded">{selectedClient.constitution || 'Unspecified'}</span></div>
+                          <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                            <span className="text-slate-500 font-semibold">PAN Number</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-slate-900 text-sm tracking-wider">{selectedClient.pan || 'N/A'}</span>
+                              {selectedClient.pan && selectedClient.pan !== 'PANNOTREQD' && <button onClick={() => copyToClipboard(selectedClient.pan, 'pan')} className="text-slate-400 hover:text-indigo-600"><Icon name="copy" className="w-3.5 h-3.5" /></button>}
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                            <span className="text-slate-500 font-semibold">GSTIN</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-slate-900 text-sm tracking-wider">{selectedClient.gstin || 'N/A'}</span>
+                              {selectedClient.gstin && selectedClient.gstin !== 'N/A' && <button onClick={() => copyToClipboard(selectedClient.gstin, 'gstin')} className="text-slate-400 hover:text-indigo-600"><Icon name="copy" className="w-3.5 h-3.5" /></button>}
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                            <span className="text-slate-500 font-semibold">Aadhaar (Ref)</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-slate-900 text-sm tracking-wider">{selectedClient.adhar || 'N/A'}</span>
+                              {selectedClient.adhar && <button onClick={() => copyToClipboard(selectedClient.adhar, 'adhar')} className="text-slate-400 hover:text-indigo-600"><Icon name="copy" className="w-3.5 h-3.5" /></button>}
+                            </div>
+                          </div>
+                          <div className="flex flex-col p-4"><span className="text-slate-500 font-semibold mb-1">Registered Address</span><div className="font-medium text-slate-800 leading-relaxed">{selectedClient.address || 'No address on file.'}</div></div>
+                        </div>
+                     </div>
+                   )}
+                   {detailViewTab === 'credentials' && (
+                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                        {selectedClient.folderUrl ? (
+                          <a href={selectedClient.folderUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl hover:bg-indigo-100 transition-colors shadow-sm">
+                             <div className="w-10 h-10 bg-indigo-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-md"><Icon name="fileText" className="w-5 h-5" /></div>
+                             <div className="overflow-hidden">
+                               <h4 className="font-bold text-indigo-900 text-sm">Open Client Folder</h4>
+                               <p className="text-indigo-600 font-medium text-[10px] truncate w-full mt-0.5">{selectedClient.folderUrl}</p>
+                             </div>
+                          </a>
+                        ) : (
+                          <div className="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center gap-3 opacity-60">
+                             <div className="w-10 h-10 bg-slate-300 text-white rounded-lg flex items-center justify-center shrink-0"><Icon name="fileText" className="w-5 h-5" /></div>
+                             <div><h4 className="font-bold text-slate-700 text-sm">No Folder Attached</h4></div>
+                          </div>
+                        )}
+                        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm p-4">
+                          <h4 className="text-slate-500 font-bold uppercase tracking-wider mb-2">Vault Notes / Credentials</h4>
+                          {selectedClient.notes ? <p className="text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{selectedClient.notes}</p> : <p className="text-slate-400 italic py-4 text-center">No notes stored for this client.</p>}
+                        </div>
+                     </div>
+                   )}
+                </div>
+
+                {isAdmin && (
+                  <div className="p-4 border-t border-slate-200 bg-white flex items-center space-x-3 pb-6 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+                    <button onClick={(e) => openEditModal(selectedClient, e)} className="flex-1 flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm transition-colors shadow-sm"><Icon name="edit" className="w-4 h-4" /><span>Edit Record</span></button>
+                    <button onClick={() => setDeleteCandidate({...selectedClient, _collection: 'clients'})} className="p-3 border border-rose-200 text-rose-600 rounded-xl hover:bg-rose-50 transition-colors shadow-sm"><Icon name="trash" className="w-5 h-5" /></button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ADD/EDIT CLIENT */}
+          {isFormOpen && isAdmin && (
+            <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 my-10 flex flex-col max-h-[90vh]">
+                <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold shadow-inner">
+                      {editingItem ? <Icon name="edit" className="w-5 h-5" /> : <Icon name="userPlus" className="w-5 h-5" />}
+                    </div>
+                    <div><h3 className="text-base font-extrabold text-slate-900">{editingItem ? `Edit Record: ${clientForm.clientId}` : 'Register New Client'}</h3></div>
+                  </div>
+                  <button onClick={() => setIsFormOpen(false)} className="p-2 text-slate-400 bg-white rounded-lg hover:bg-slate-100 transition-colors"><Icon name="x" className="w-5 h-5" /></button>
+                </div>
+                <form onSubmit={handleSaveClient} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-xs bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2"><h4 className="font-bold text-slate-900 border-b border-slate-100 pb-1 mb-3 text-[10px] uppercase tracking-wider text-slate-400">Primary Identity</h4></div>
+                    <div className="sm:col-span-1"><label className="block text-slate-700 font-bold mb-1.5">Trade Name *</label><input type="text" required value={clientForm.clientName || ''} onChange={(e) => setClientForm({ ...clientForm, clientName: e.target.value })} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+                    <div className="sm:col-span-1"><label className="block text-slate-700 font-bold mb-1.5">Legal Name (As per PAN)</label><input type="text" value={clientForm.legalName || ''} onChange={(e) => setClientForm({ ...clientForm, legalName: e.target.value })} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+                    
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1.5">Mobile Number</label>
+                      <div className="flex shadow-sm rounded-lg">
+                        <span className="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-slate-500 font-bold">+91</span>
+                        <input type="tel" maxLength={10} value={clientForm.mobile || ''} onChange={(e) => setClientForm({ ...clientForm, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })} className="flex-1 min-w-0 block w-full px-3 py-2.5 rounded-none rounded-r-lg border border-slate-300 focus:ring-indigo-500 focus:outline-none font-medium tracking-wide" />
+                      </div>
+                    </div>
+                    <div><label className="block text-slate-700 font-bold mb-1.5">Email Address</label><input type="email" value={clientForm.email || ''} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+
+                    <div className="sm:col-span-2 mt-2"><h4 className="font-bold text-slate-900 border-b border-slate-100 pb-1 mb-3 text-[10px] uppercase tracking-wider text-slate-400">Compliance & KYC</h4></div>
+                    <div><label className="block text-slate-700 font-bold mb-1.5">PAN Number</label><input type="text" value={clientForm.pan || ''} onChange={(e) => setClientForm({ ...clientForm, pan: e.target.value.toUpperCase() })} className="w-full p-2.5 border border-slate-300 rounded-lg font-mono uppercase focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+                    <div><label className="block text-slate-700 font-bold mb-1.5">GSTIN Number</label><input type="text" value={clientForm.gstin || ''} onChange={(e) => setClientForm({ ...clientForm, gstin: e.target.value.toUpperCase() })} className="w-full p-2.5 border border-slate-300 rounded-lg font-mono uppercase focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+                    <div><label className="block text-slate-700 font-bold mb-1.5">Aadhaar Reference</label><input type="text" value={clientForm.adhar || ''} onChange={(e) => setClientForm({ ...clientForm, adhar: e.target.value.replace(/\D/g, '').slice(0,12) })} placeholder="12 Digit Number" className="w-full p-2.5 border border-slate-300 rounded-lg font-mono focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1.5">Constitution</label>
+                      <select value={clientForm.constitution || ''} onChange={(e) => setClientForm({ ...clientForm, constitution: e.target.value })} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm">
+                        <option value="">(Select Entity Type)</option><option value="Individual">Individual</option><option value="Proprietorship">Proprietorship</option><option value="Partnership">Partnership</option><option value="Private Limited">Private Limited</option><option value="LLP">LLP</option><option value="Trust">Trust</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2"><label className="block text-slate-700 font-bold mb-1.5">Registered Address</label><textarea value={clientForm.address || ''} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} rows={2} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm" /></div>
+                    <div className="sm:col-span-2 mt-2"><h4 className="font-bold text-slate-900 border-b border-slate-100 pb-1 mb-3 text-[10px] uppercase tracking-wider text-slate-400">System & Vault</h4></div>
+                    <div><label className="block text-slate-700 font-bold mb-1.5">Assigned Branch</label><input type="text" value={clientForm.branchId || ''} onChange={(e) => setClientForm({ ...clientForm, branchId: e.target.value.toUpperCase() })} placeholder="e.g. HQ" className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 uppercase shadow-sm" /></div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1.5">Status</label>
+                      <select value={clientForm.status || 'Active'} onChange={(e) => setClientForm({ ...clientForm, status: e.target.value })} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm">
+                        <option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Pending">Pending</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2"><label className="block text-slate-700 font-bold mb-1.5">Client Folder URL</label><input type="url" value={clientForm.folderUrl || ''} onChange={(e) => setClientForm({ ...clientForm, folderUrl: e.target.value })} placeholder="https://" className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-blue-600 shadow-sm" /></div>
+                    <div className="sm:col-span-2"><label className="block text-slate-700 font-bold mb-1.5">Secure Notes</label><textarea value={clientForm.notes || ''} onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })} rows={3} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 shadow-sm font-mono text-[11px]" /></div>
+                  </div>
+                </form>
+                <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex items-center justify-end space-x-3 shrink-0">
+                  {editingItem && <button type="button" onClick={() => setDeleteCandidate({...editingItem, _collection: 'clients'})} className="px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 shadow-sm mr-auto"><Icon name="trash" className="w-4 h-4" /></button>}
+                  <button type="button" onClick={() => setIsFormOpen(false)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 font-bold hover:bg-slate-50 shadow-sm">Cancel</button>
+                  <button onClick={handleSaveClient} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md transition-colors">Save</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ADD/EDIT COMPLIANCE */}
+          {isComplianceFormOpen && isAdmin && (
+            <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 my-10 flex flex-col max-h-[90vh]">
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-fuchsia-100 text-fuchsia-600 flex items-center justify-center font-bold shadow-inner"><Icon name="fileText" className="w-5 h-5" /></div>
+                    <div><h3 className="text-base font-extrabold text-slate-900">{editingItem ? `Edit Compliance` : 'Log Task'}</h3></div>
+                  </div>
+                  <button onClick={() => setIsComplianceFormOpen(false)} className="p-2 text-slate-400 bg-white rounded-lg hover:bg-slate-100 transition-colors"><Icon name="x" className="w-5 h-5" /></button>
+                </div>
+                <form className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="sm:col-span-2">
+                        <label className="block text-slate-700 font-bold mb-1.5">Link to Client * (Searchable)</label>
+                        <input list="clients-comp-list" required placeholder="Type client name..." value={compForm.ClientID || ''} onChange={(e) => setCompForm({...compForm, ClientID: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 shadow-sm bg-white font-semibold" />
+                        <datalist id="clients-comp-list">{(clientsData||[]).map(c => <option key={c.clientId} value={c.clientId}>{c.clientName}</option>)}</datalist>
+                     </div>
+                     <div className="sm:col-span-2"><label className="block text-slate-700 font-bold mb-1.5">Task / Compliance Name *</label><input type="text" required value={compForm.CompllianceName || ''} onChange={(e) => setCompForm({...compForm, CompllianceName: e.target.value})} placeholder="e.g. GST GSTR-3B" className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-fuchsia-500 shadow-sm" /></div>
+                     <div><label className="block text-slate-700 font-bold mb-1.5">Date of Logging</label><input type="date" value={compForm.Date || ''} onChange={(e) => setCompForm({...compForm, Date: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                     <div><label className="block text-slate-700 font-bold mb-1.5">Statutory Due Date</label><input type="date" value={compForm.DueDate || ''} onChange={(e) => setCompForm({...compForm, DueDate: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                     <div>
+                        <label className="block text-slate-700 font-bold mb-1.5">Frequency</label>
+                        <select value={compForm.ComplianceFrequency || ''} onChange={(e) => setCompForm({...compForm, ComplianceFrequency: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm bg-white">
+                           <option value="Monthly">Monthly</option><option value="Quarterly">Quarterly</option><option value="Annually">Annually</option><option value="One-Time">One-Time</option>
+                        </select>
+                     </div>
+                     <div><label className="block text-slate-700 font-bold mb-1.5">Period (e.g. FY 23-24)</label><input type="text" value={compForm.PeriodOfCompliance || ''} onChange={(e) => setCompForm({...compForm, PeriodOfCompliance: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                     <div>
+                        <label className="block text-slate-700 font-bold mb-1.5">Status</label>
+                        <select value={compForm.StatusofCompliance || ''} onChange={(e) => setCompForm({...compForm, StatusofCompliance: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm bg-white font-bold text-indigo-700">
+                           <option value="Pending">Pending</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option>
+                        </select>
+                     </div>
+                     <div>
+                        <label className="block text-slate-700 font-bold mb-1.5">Priority</label>
+                        <select value={compForm.Priority || ''} onChange={(e) => setCompForm({...compForm, Priority: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm bg-white">
+                           <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
+                        </select>
+                     </div>
+                     <div className="sm:col-span-2 mt-2"><h4 className="font-bold text-slate-900 border-b border-slate-100 pb-1 mb-2 text-[10px] uppercase tracking-wider text-slate-400">Billing & Ack</h4></div>
+                     <div><label className="block text-slate-700 font-bold mb-1.5">Professional Fee (₹)</label><input type="number" value={compForm.ProfessionalFee || ''} onChange={(e) => setCompForm({...compForm, ProfessionalFee: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                     <div>
+                        <label className="block text-slate-700 font-bold mb-1.5">Payment Status</label>
+                        <select value={compForm.PaymentStatus || ''} onChange={(e) => setCompForm({...compForm, PaymentStatus: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm bg-white">
+                           <option value="Unpaid">Unpaid</option><option value="Paid">Paid</option>
+                        </select>
+                     </div>
+                     <div><label className="block text-slate-700 font-bold mb-1.5">Invoice No.</label><input type="text" value={compForm.ProformaInvoiceNo || ''} onChange={(e) => setCompForm({...compForm, ProformaInvoiceNo: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                     <div><label className="block text-slate-700 font-bold mb-1.5">Gov. ARN / Challan No.</label><input type="text" value={compForm.AknNo || ''} onChange={(e) => setCompForm({...compForm, AknNo: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm font-mono" /></div>
+                     <div className="sm:col-span-2"><label className="block text-slate-700 font-bold mb-1.5">General Comments</label><textarea value={compForm.Comments || ''} onChange={(e) => setCompForm({...compForm, Comments: e.target.value})} rows={2} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                  </div>
+                </form>
+                <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end space-x-3 shrink-0">
+                  {editingItem && <button type="button" onClick={() => setDeleteCandidate({...editingItem, _collection: 'compliances'})} className="px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 shadow-sm mr-auto"><Icon name="trash" className="w-4 h-4" /></button>}
+                  <button type="button" onClick={() => setIsComplianceFormOpen(false)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 font-bold hover:bg-slate-50 shadow-sm">Cancel</button>
+                  <button onClick={handleSaveCompliance} className="px-6 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-xl font-bold shadow-md transition-colors">Save Record</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ADD/EDIT CREDENTIAL */}
+          {isCredentialFormOpen && isAdmin && (
+            <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 my-10 flex flex-col max-h-[90vh]">
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shadow-inner"><Icon name="key" className="w-5 h-5" /></div>
+                    <div><h3 className="text-base font-extrabold text-slate-900">{editingItem ? `Edit Vault Entry` : 'Add Credentials'}</h3></div>
+                  </div>
+                  <button onClick={() => setIsCredentialFormOpen(false)} className="p-2 text-slate-400 bg-white rounded-lg hover:bg-slate-100 transition-colors"><Icon name="x" className="w-5 h-5" /></button>
+                </div>
+                <form className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs bg-white">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">Link to Client * (Searchable)</label>
+                    <input list="clients-cred-list" required placeholder="Type client name..." value={credForm.ClientID || ''} onChange={(e) => setCredForm({...credForm, ClientID: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 shadow-sm bg-white font-semibold" />
+                    <datalist id="clients-cred-list">{(clientsData||[]).map(c => <option key={c.clientId} value={c.clientId}>{c.clientName}</option>)}</datalist>
+                  </div>
+                  <div><label className="block text-slate-700 font-bold mb-1.5">Portal Name *</label><input type="text" required value={credForm.PortalName || ''} onChange={(e) => setCredForm({...credForm, PortalName: e.target.value})} placeholder="e.g. Income Tax" className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                  <div><label className="block text-slate-700 font-bold mb-1.5">Login URL</label><input type="url" value={credForm.URL || ''} onChange={(e) => setCredForm({...credForm, URL: e.target.value})} placeholder="https://" className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm text-blue-600" /></div>
+                  <div><label className="block text-slate-700 font-bold mb-1.5">Username / Login ID</label><input type="text" value={credForm.Username || ''} onChange={(e) => setCredForm({...credForm, Username: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm font-mono" /></div>
+                  <div><label className="block text-slate-700 font-bold mb-1.5">Password</label><input type="text" value={credForm.Password || ''} onChange={(e) => setCredForm({...credForm, Password: e.target.value})} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm font-mono" /></div>
+                  <div><label className="block text-slate-700 font-bold mb-1.5">Secure Notes</label><textarea value={credForm.Notes || ''} onChange={(e) => setCredForm({...credForm, Notes: e.target.value})} rows={2} className="w-full p-2.5 border border-slate-300 rounded-lg shadow-sm" /></div>
+                </form>
+                <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end space-x-3 shrink-0">
+                  {editingItem && <button type="button" onClick={() => setDeleteCandidate({...editingItem, _collection: 'credentials'})} className="px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 shadow-sm mr-auto"><Icon name="trash" className="w-4 h-4" /></button>}
+                  <button onClick={() => setIsCredentialFormOpen(false)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold shadow-sm hover:bg-slate-50">Cancel</button>
+                  <button onClick={handleSaveCredential} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-bold shadow-md hover:bg-emerald-700">Save</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DELETE CONFIRMATION */}
+          {deleteCandidate && (
+            <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+                <div className="w-14 h-14 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-5 shadow-inner"><Icon name="trash" className="w-7 h-7" /></div>
+                <h3 className="text-lg font-extrabold text-slate-900 text-center">Delete Record?</h3>
+                <p className="text-center text-slate-500 text-sm mt-2">This action cannot be undone. Are you sure?</p>
+                <div className="mt-8 flex items-center space-x-3">
+                  <button onClick={() => setDeleteCandidate(null)} className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 shadow-sm">Cancel</button>
+                  <button onClick={confirmDelete} className="flex-1 py-3 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-sm font-bold shadow-md">Delete</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+  </script>
+</body>
+</html>
