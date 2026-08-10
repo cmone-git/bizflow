@@ -1,22 +1,32 @@
 // js/guard.js
-import { auth, FB } from './firebase.js';
-
-// Define Corporate Admins here
-const ADMIN_EMAILS = ['admin@cmfilings.com', 'demo@cmfilings.com'];
+import { auth, db, FB } from './firebase.js';
 
 export function requireAuth(onAuthenticated) {
-    FB.onAuthStateChanged(auth, (user) => {
+    FB.onAuthStateChanged(auth, async (user) => {
         if (!user) {
-            // Not logged in -> Kick to index
             window.location.href = 'index.html';
         } else {
-            // Assign roles
-            const isAdmin = ADMIN_EMAILS.includes(user.email?.toLowerCase());
-            user.role = isAdmin ? 'admin' : 'client';
-            user.assignedBranch = 'HQ'; // Fetch dynamically if needed later
-            
-            // Allow page render
-            onAuthenticated(user);
+            try {
+                // Fetch permissions from root /users/{email} collection
+                const userDocRef = FB.doc(db, 'users', user.email.toLowerCase());
+                const userSnap = await FB.getDoc(userDocRef);
+
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    user.role = userData.role || 'client';
+                    user.assignedBranch = userData.branch || 'UNASSIGNED';
+                } else {
+                    // Auto-create basic client profile if they don't exist yet
+                    user.role = 'client';
+                    user.assignedBranch = 'UNASSIGNED';
+                    await FB.setDoc(userDocRef, { role: 'client', branch: 'UNASSIGNED' });
+                }
+                
+                onAuthenticated(user);
+            } catch (error) {
+                console.error("Permission check failed:", error);
+                window.location.href = 'index.html';
+            }
         }
     });
 }
