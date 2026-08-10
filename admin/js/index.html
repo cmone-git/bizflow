@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>CM ADMIN - Login</title>
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="assets/logo.png"
+  >
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+
+<body class="min-h-screen bg-slate-50">
+
+  <div
+    id="loginApp"
+    class="min-h-screen flex items-center justify-center p-6"
+  >
+
+    <!-- LOGIN CARD -->
+
+    <div class="w-full max-w-sm">
+
+      <div
+        class="bg-white border border-slate-200 rounded-2xl shadow-xl p-7"
+      >
+
+        <!-- LOGO -->
+
+        <div class="flex justify-center mb-5">
+
+          <img
+            src="assets/logo.png"
+            alt="CM ADMIN"
+            class="w-16 h-16 rounded-2xl object-contain"
+            onerror="this.style.display='none'"
+          >
+
+        </div>
+
+
+        <!-- TITLE -->
+
+        <h1
+          class="text-2xl font-extrabold text-slate-900 text-center"
+        >
+          CM ADMIN
+        </h1>
+
+
+        <p
+          class="text-xs text-slate-500 text-center mt-1 mb-7"
+        >
+          ClientHub CRM
+        </p>
+
+
+        <!-- LOGIN BUTTON -->
+
+        <button
+          id="googleLoginBtn"
+          class="
+            w-full
+            bg-indigo-600
+            hover:bg-indigo-700
+            text-white
+            font-bold
+            py-3
+            rounded-xl
+            shadow-md
+            transition
+            flex
+            items-center
+            justify-center
+            gap-2
+          "
+        >
+
+          <span id="googleLoginText">
+            Sign in with Google
+          </span>
+
+          <span
+            id="googleLoginLoader"
+            class="hidden"
+          >
+            Signing in...
+          </span>
+
+        </button>
+
+
+        <!-- ERROR -->
+
+        <div
+          id="loginError"
+          class="
+            hidden
+            mt-4
+            p-3
+            bg-rose-50
+            border
+            border-rose-100
+            rounded-xl
+            text-xs
+            text-rose-700
+          "
+        ></div>
+
+
+        <p
+          class="
+            text-[10px]
+            text-slate-400
+            text-center
+            mt-6
+            leading-relaxed
+          "
+        >
+          Authorized users only.<br>
+          Securely powered by Firebase.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ======================================
+       LOGIN SCRIPT
+  ======================================= -->
+
+  <script type="module">
+
+    import {
+      loginWithGoogle,
+      watchAuth
+    } from "./js/auth.js";
+
+
+    const loginBtn =
+      document.getElementById("googleLoginBtn");
+
+    const loginText =
+      document.getElementById("googleLoginText");
+
+    const loginLoader =
+      document.getElementById("googleLoginLoader");
+
+    const loginError =
+      document.getElementById("loginError");
+
+
+    // ======================================
+    // CHECK EXISTING LOGIN
+    // ======================================
+
+    watchAuth((user) => {
+
+      if (user) {
+
+        console.log(
+          "Already logged in:",
+          user.email
+        );
+
+        window.location.href =
+          "admin.html";
+
+      }
+
+    });
+
+
+    // ======================================
+    // GOOGLE LOGIN
+    // ======================================
+
+    loginBtn.addEventListener(
+      "click",
+      async () => {
+
+        loginError.classList.add("hidden");
+
+        loginBtn.disabled = true;
+
+        loginText.classList.add("hidden");
+
+        loginLoader.classList.remove("hidden");
+
+
+        try {
+
+          await loginWithGoogle();
+
+          window.location.href =
+            "admin.html";
+
+        } catch (error) {
+
+          console.error(error);
+
+          loginError.textContent =
+            error.message ||
+            "Google sign-in failed.";
+
+          loginError.classList.remove(
+            "hidden"
+          );
+
+        } finally {
+
+          loginBtn.disabled = false;
+
+          loginText.classList.remove(
+            "hidden"
+          );
+
+          loginLoader.classList.add(
+            "hidden"
+          );
+
+        }
+
+      }
+    );
+
+  </script>
+
+</body>
+
+</html>
