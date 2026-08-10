@@ -1135,6 +1135,509 @@
         </div>
       );
     }
+
+// ==========================================
+// FIREBASE + APPLICATION BOOTSTRAP
+// ==========================================
+
+(async function bootstrap() {
+  try {
+    // Wait until Firebase modules are loaded
+    await window.firebaseLoadPromise;
+
+    if (!window.FirebaseAPI) {
+      throw new Error("Firebase API failed to load.");
+    }
+
+    const {
+      initializeApp,
+      getAuth,
+      getFirestore,
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      setDoc,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider,
+      signOut
+    } = window.FirebaseAPI;
+
+    // ------------------------------------------
+    // Firebase configuration
+    // ------------------------------------------
+
+    const firebaseApp = initializeApp(MY_FIREBASE_CONFIG);
+
+    const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
+
+    // ------------------------------------------
+    // Local application state
+    // ------------------------------------------
+
+    function RootApp() {
+
+      const [currentUser, setCurrentUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+
+      const [clientsData, setClientsData] = useState([]);
+      const [compliancesData, setCompliancesData] = useState([]);
+      const [credentialsData, setCredentialsData] = useState([]);
+      const [paymentLinks, setPaymentLinks] = useState([]);
+      const [companyProfile, setCompanyProfile] = useState(null);
+
+      // ----------------------------------------
+      // Authentication
+      // ----------------------------------------
+
+      useEffect(() => {
+
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+
+          if (!user) {
+            setCurrentUser(null);
+            setAuthLoading(false);
+            return;
+          }
+
+          // Default user object
+          const userData = {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || '',
+            role: 'admin',
+            assignedBranch: 'HQ'
+          };
+
+          setCurrentUser(userData);
+          setAuthLoading(false);
+        });
+
+        return () => unsubscribe();
+
+      }, []);
+
+      // ----------------------------------------
+      // Generic collection listener
+      // ----------------------------------------
+
+      useEffect(() => {
+
+        if (!currentUser) return;
+
+        const unsubClients = onSnapshot(
+          collection(db, 'clients'),
+          snapshot => {
+            setClientsData(
+              snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+              }))
+            );
+          },
+          error => console.error('Clients listener:', error)
+        );
+
+        const unsubCompliances = onSnapshot(
+          collection(db, 'compliances'),
+          snapshot => {
+            setCompliancesData(
+              snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+              }))
+            );
+          },
+          error => console.error('Compliances listener:', error)
+        );
+
+        const unsubCredentials = onSnapshot(
+          collection(db, 'credentials'),
+          snapshot => {
+            setCredentialsData(
+              snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+              }))
+            );
+          },
+          error => console.error('Credentials listener:', error)
+        );
+
+        const unsubPayments = onSnapshot(
+          collection(db, 'paymentLinks'),
+          snapshot => {
+            setPaymentLinks(
+              snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+              }))
+            );
+          },
+          error => console.error('Payment listener:', error)
+        );
+
+        const companyRef = doc(db, 'settings', 'company');
+
+        const unsubCompany = onSnapshot(
+          companyRef,
+          snapshot => {
+            if (snapshot.exists()) {
+              setCompanyProfile(snapshot.data());
+            } else {
+              setCompanyProfile({
+                companyName: '',
+                email: '',
+                phone: '',
+                address: '',
+                bankName: '',
+                accNo: '',
+                ifsc: '',
+                upiId: ''
+              });
+            }
+          },
+          error => console.error('Company listener:', error)
+        );
+
+        return () => {
+          unsubClients();
+          unsubCompliances();
+          unsubCredentials();
+          unsubPayments();
+          unsubCompany();
+        };
+
+      }, [currentUser]);
+
+      // ----------------------------------------
+      // INSERT
+      // ----------------------------------------
+
+      const insertRecord = async (collectionName, data) => {
+
+        try {
+
+          await addDoc(
+            collection(db, collectionName),
+            {
+              ...data,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          );
+
+        } catch (error) {
+
+          console.error(`Insert ${collectionName} error:`, error);
+          alert(`Failed to save record: ${error.message}`);
+
+        }
+
+      };
+
+      // ----------------------------------------
+      // UPDATE
+      // ----------------------------------------
+
+      const updateRecord = async (collectionName, data) => {
+
+        try {
+
+          if (!data.id) {
+            throw new Error('Record ID is missing.');
+          }
+
+          const recordRef = doc(
+            db,
+            collectionName,
+            data.id
+          );
+
+          const { id, ...recordData } = data;
+
+          await updateDoc(recordRef, {
+            ...recordData,
+            updatedAt: new Date().toISOString()
+          });
+
+        } catch (error) {
+
+          console.error(`Update ${collectionName} error:`, error);
+          alert(`Failed to update record: ${error.message}`);
+
+        }
+
+      };
+
+      // ----------------------------------------
+      // DELETE
+      // ----------------------------------------
+
+      const deleteRecord = async (collectionName, id) => {
+
+        try {
+
+          if (!id) {
+            throw new Error('Record ID is missing.');
+          }
+
+          await deleteDoc(
+            doc(db, collectionName, id)
+          );
+
+        } catch (error) {
+
+          console.error(`Delete ${collectionName} error:`, error);
+          alert(`Failed to delete record: ${error.message}`);
+
+        }
+
+      };
+
+      // ----------------------------------------
+      // Company profile
+      // ----------------------------------------
+
+      const saveCompanyProfile = async (data) => {
+
+        try {
+
+          await setDoc(
+            doc(db, 'settings', 'company'),
+            {
+              ...data,
+              updatedAt: new Date().toISOString()
+            },
+            { merge: true }
+          );
+
+          setCompanyProfile(data);
+
+        } catch (error) {
+
+          console.error('Company profile error:', error);
+          alert(`Failed to save company profile: ${error.message}`);
+
+        }
+
+      };
+
+      // ----------------------------------------
+      // Logout
+      // ----------------------------------------
+
+      const handleLogout = async () => {
+
+        try {
+
+          await signOut(auth);
+
+        } catch (error) {
+
+          console.error('Logout error:', error);
+
+        }
+
+      };
+
+      // ----------------------------------------
+      // Loading screen
+      // ----------------------------------------
+
+      if (authLoading) {
+
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+
+            <div className="text-center">
+
+              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Icon name="users" className="w-6 h-6 text-white" />
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-sm text-slate-500 font-medium">
+
+                <Spinner className="w-4 h-4 animate-spin" />
+
+                Loading CM ADMIN...
+
+              </div>
+
+            </div>
+
+          </div>
+        );
+
+      }
+
+      // ----------------------------------------
+      // Login screen
+      // ----------------------------------------
+
+      if (!currentUser) {
+
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+
+            <div className="w-full max-w-sm">
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-7">
+
+                <div className="flex justify-center mb-5">
+
+                  <img
+                    src="logo.png"
+                    className="w-16 h-16 rounded-2xl"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+
+                </div>
+
+                <h1 className="text-2xl font-extrabold text-slate-900 text-center">
+                  CM ADMIN
+                </h1>
+
+                <p className="text-xs text-slate-500 text-center mt-1 mb-6">
+                  ClientHub CRM
+                </p>
+
+                <button
+                  onClick={async () => {
+
+                    try {
+
+                      const provider = new GoogleAuthProvider();
+
+                      await signInWithPopup(
+                        auth,
+                        provider
+                      );
+
+                    } catch (error) {
+
+                      console.error(error);
+
+                      alert(
+                        error.message ||
+                        'Google sign-in failed.'
+                      );
+
+                    }
+
+                  }}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
+                >
+
+                  Sign in with Google
+
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+        );
+
+      }
+
+      // ----------------------------------------
+      // Main application
+      // ----------------------------------------
+
+      return (
+        <App
+          clientsData={clientsData}
+          compliancesData={compliancesData}
+          credentialsData={credentialsData}
+          companyProfile={companyProfile}
+          paymentLinks={paymentLinks}
+          insertRecord={insertRecord}
+          updateRecord={updateRecord}
+          deleteRecord={deleteRecord}
+          setCompanyProfile={saveCompanyProfile}
+          currentUser={currentUser}
+          handleLogout={handleLogout}
+        />
+      );
+
+    }
+
+    // ------------------------------------------
+    // Render React
+    // ------------------------------------------
+
+    const root =
+      ReactDOM.createRoot(
+        document.getElementById('root')
+      );
+
+    root.render(<RootApp />);
+
+  } catch (error) {
+
+    console.error(
+      'APPLICATION BOOTSTRAP ERROR:',
+      error
+    );
+
+    document.getElementById('root').innerHTML = `
+      <div style="
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#f8fafc;
+        font-family:Arial,sans-serif;
+        padding:20px;
+      ">
+        <div style="
+          max-width:500px;
+          width:100%;
+          background:white;
+          border:1px solid #e2e8f0;
+          border-radius:16px;
+          padding:30px;
+          box-shadow:0 10px 30px rgba(0,0,0,.08);
+        ">
+          <h2 style="
+            margin:0 0 10px;
+            color:#0f172a;
+          ">
+            CM ADMIN failed to start
+          </h2>
+
+          <p style="
+            color:#64748b;
+            font-size:14px;
+            line-height:1.6;
+          ">
+            ${String(error.message || error)}
+          </p>
+
+          <p style="
+            color:#94a3b8;
+            font-size:12px;
+            margin-top:20px;
+          ">
+            Open browser developer tools → Console for details.
+          </p>
+        </div>
+      </div>
+    `;
+
+  }
+
+})();
+
   </script>
 </body>
 </html>
