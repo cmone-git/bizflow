@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Profile - CM FILINGS</title>
+    
+    <!-- PWA & Favicon Assets -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#071D49">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#B10000',
+                            redhover: '#8A0000',
+                            redlight: '#FDF2F2',
+                            navy: '#071D49',
+                            navyhover: '#102a5c',
+                            light: '#F4F5F7',
+                            white: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html { scroll-behavior: smooth; }
+        .hero-pattern {
+            background-color: #F4F5F7;
+            background-image: radial-gradient(rgba(7, 29, 73, 0.05) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="font-sans text-slate-700 bg-brand-light antialiased selection:bg-brand-redlight selection:text-brand-red flex flex-col min-h-screen">
+
+    <!-- APP LOADER -->
+    <div id="app-loader" class="fixed inset-0 bg-brand-light z-[100] flex flex-col items-center justify-center">
+        <i data-lucide="loader-2" class="w-10 h-10 text-brand-navy animate-spin mb-4"></i>
+        <p class="text-sm font-bold text-slate-500 tracking-widest uppercase">Loading Company Profile...</p>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="main-app" class="hidden flex-col min-h-screen">
+        
+        <!-- HEADER -->
+        <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <div class="flex items-center gap-4">
+                        <a href="dashboard.html" class="flex items-center gap-3 group border-r border-slate-200 pr-4">
+                            <div class="w-10 h-10 bg-brand-navy rounded-xl flex items-center justify-center text-white shadow-sm">
+                                <i data-lucide="building" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-extrabold text-xl tracking-tight text-brand-navy leading-none">CM FILINGS</span>
+                                <span class="text-[9px] font-bold text-brand-red uppercase tracking-widest leading-none mt-1">Company Master</span>
+                            </div>
+                        </a>
+                        <a href="dashboard.html" class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-navy transition-colors">
+                            <i data-lucide="home" class="w-4 h-4"></i> Dashboard
+                        </a>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <span id="save-status-msg" class="text-xs font-bold text-emerald-600 hidden">Changes Saved Successfully!</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 hero-pattern py-8 relative">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+                
+                <div class="mb-8 text-center sm:text-left">
+                    <h2 class="text-xs font-extrabold tracking-widest uppercase text-brand-red mb-2">Corporate Identity</h2>
+                    <h1 class="text-3xl font-extrabold text-brand-navy tracking-tight">Company & Bank Profile</h1>
+                    <p class="text-slate-500 font-medium mt-2">Update branding, statutory identifiers, and banking details injected into all invoices.</p>
+                </div>
+
+                <form id="company-form" class="space-y-8">
+                    
+                    <!-- SECTION 1: BASIC BUSINESS IDENTITY & LOGO -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                        <h3 class="text-base font-bold text-brand-navy flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <i data-lucide="briefcase" class="w-5 h-5 text-brand-red"></i> Business Entity & Branding
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+                            <div class="sm:col-span-2 space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Legal Business Name *</label>
+                                    <input type="text" id="comp-name" required class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-bold text-brand-navy outline-none bg-white" placeholder="CM FILINGS">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Business Tagline / Subtitle</label>
+                                    <input type="text" id="comp-tagline" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white" placeholder="Tax Experts & Business Innovators">
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+                                <div class="w-20 h-20 bg-white rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden mb-2 shadow-sm">
+                                    <img id="logo-preview" src="logo.png" alt="Company Logo" class="w-full h-full object-contain">
+                                </div>
+                                <label class="text-[10px] font-bold text-brand-red uppercase tracking-wider cursor-pointer hover:underline">
+                                    Upload Logo <input type="file" id="logo-file" accept="image/*" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: STATUTORY IDENTIFIERS -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                        <h3 class="text-base font-bold text-brand-navy flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-brand-red"></i> Statutory Registration Numbers
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">PAN Number</label>
+                                <input type="text" id="comp-pan" maxlength="10" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold uppercase outline-none bg-white" placeholder="ABCDE1234F">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">GSTIN Number</label>
+                                <input type="text" id="comp-gstin" maxlength="15" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold uppercase outline-none bg-white" placeholder="32AAAAA0000A1Z5">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">CIN / MSME No</label>
+                                <input type="text" id="comp-cin" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold outline-none bg-white" placeholder="U74999KL...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: CONTACT & ADDRESS -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                        <h3 class="text-base font-bold text-brand-navy flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-brand-red"></i> Official Communication & Address
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Support Phone</label>
+                                <input type="tel" id="comp-phone" maxlength="10" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold outline-none bg-white" placeholder="9946151111">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Official Email</label>
+                                <input type="email" id="comp-email" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white" placeholder="info@cmfilings.com">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Website</label>
+                                <input type="text" id="comp-website" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white" placeholder="https://cmfilings.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Registered Address</label>
+                            <textarea id="comp-address" rows="3" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white resize-none" placeholder="Shakthi Complex, Mahe, Kannur District, Kerala 670672"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: PRIMARY BANK & UPI SETTINGS -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                        <h3 class="text-base font-bold text-brand-navy flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <i data-lucide="landmark" class="w-5 h-5 text-brand-red"></i> Bank Account & UPI Details (Reflected in Invoices & QR)
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Bank Name *</label>
+                                <input type="text" id="bank-name" required class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-bold outline-none bg-white" placeholder="HDFC Bank / SBI">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Account Number *</label>
+                                <input type="text" id="bank-acc-no" required class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold outline-none bg-white" placeholder="50200000000000">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">IFSC Code *</label>
+                                <input type="text" id="bank-ifsc" required maxlength="11" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold uppercase outline-none bg-white" placeholder="HDFC0001234">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Branch Name</label>
+                                <input type="text" id="bank-branch" class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-medium outline-none bg-white" placeholder="Mahe Branch">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">UPI ID (For QR Integration) *</label>
+                                <input type="text" id="bank-upi" required class="w-full px-3.5 py-3 rounded-xl border border-slate-300 text-xs font-mono font-bold text-brand-red outline-none bg-white" placeholder="cmfilings@upi">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-save" class="w-full py-4 bg-brand-red text-white font-bold rounded-2xl shadow-lg hover:bg-brand-redhover transition-colors flex items-center justify-center gap-2 text-sm">
+                        <i data-lucide="save" class="w-5 h-5"></i> Save & Publish Company Profile
+                    </button>
+                </form>
+
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="bg-white border-t border-slate-200 pt-8 pb-8 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center text-xs font-medium text-slate-500">
+                <p>&copy; 2026 CM Filings. Corporate Master Settings.</p>
+                <div class="flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-brand-red"></i> Secure Vault</div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- FIREBASE & LOGIC SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXyKSTlmlzkYnH2LW408cVVWV1CPvlfBo",
+            authDomain: "cmfilings-6a37c.firebaseapp.com",
+            projectId: "cmfilings-6a37c",
+            storageBucket: "cmfilings-6a37c.firebasestorage.app",
+            messagingSenderId: "138705123778",
+            appId: "1:138705123778:web:9561bff9f0f5d89bb6fe5b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        lucide.createIcons();
+
+        const appLoader = document.getElementById('app-loader');
+        const mainApp = document.getElementById('main-app');
+        const companyForm = document.getElementById('company-form');
+        const saveStatusMsg = document.getElementById('save-status-msg');
+        const btnSave = document.getElementById('btn-save');
+
+        const logoFile = document.getElementById('logo-file');
+        const logoPreview = document.getElementById('logo-preview');
+
+        let logoUrl = "logo.png";
+
+        // Form Fields
+        const compName = document.getElementById('comp-name');
+        const compTagline = document.getElementById('comp-tagline');
+        const compPan = document.getElementById('comp-pan');
+        const compGstin = document.getElementById('comp-gstin');
+        const compCin = document.getElementById('comp-cin');
+        const compPhone = document.getElementById('comp-phone');
+        const compEmail = document.getElementById('comp-email');
+        const compWebsite = document.getElementById('comp-website');
+        const compAddress = document.getElementById('comp-address');
+        const bankName = document.getElementById('bank-name');
+        const bankAccNo = document.getElementById('bank-acc-no');
+        const bankIfsc = document.getElementById('bank-ifsc');
+        const bankBranch = document.getElementById('bank-branch');
+        const bankUpi = document.getElementById('bank-upi');
+
+        // Load existing company profile from Firebase
+        async function loadCompanyProfile() {
+            try {
+                const docRef = doc(db, 'settings', 'company');
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    compName.value = data.name || '';
+                    compTagline.value = data.tagline || '';
+                    compPan.value = data.pan || '';
+                    compGstin.value = data.gstin || '';
+                    compCin.value = data.cin || '';
+                    compPhone.value = data.phone || '';
+                    compEmail.value = data.email || '';
+                    compWebsite.value = data.website || '';
+                    compAddress.value = data.address || '';
+                    bankName.value = data.bankName || '';
+                    bankAccNo.value = data.bankAccNo || '';
+                    bankIfsc.value = data.bankIfsc || '';
+                    bankBranch.value = data.bankBranch || '';
+                    bankUpi.value = data.bankUpi || 'cmfilings@upi';
+
+                    if (data.logoUrl) {
+                        logoUrl = data.logoUrl;
+                        logoPreview.src = logoUrl;
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading company profile:", err);
+            } finally {
+                appLoader.classList.add('hidden');
+                mainApp.classList.replace('hidden', 'flex');
+            }
+        }
+
+        loadCompanyProfile();
+
+        // Handle Logo Upload Preview & Storage Ref
+        logoFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => logoPreview.src = event.target.result;
+                reader.readAsDataURL(file);
+
+                try {
+                    const storageRef = ref(storage, 'company/logo.png');
+                    const snapshot = await uploadBytes(storageRef, file);
+                    logoUrl = await getDownloadURL(snapshot.ref);
+                } catch (err) {
+                    console.error("Logo upload error:", err);
+                }
+            }
+        });
+
+        // Save Company Profile
+        companyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const originalText = btnSave.innerHTML;
+            btnSave.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin inline"></i> Saving Profile...`;
+            lucide.createIcons();
+
+            const payload = {
+                name: compName.value.trim(),
+                tagline: compTagline.value.trim(),
+                logoUrl: logoUrl,
+                pan: compPan.value.trim().toUpperCase(),
+                gstin: compGstin.value.trim().toUpperCase(),
+                cin: compCin.value.trim().toUpperCase(),
+                phone: compPhone.value.trim(),
+                email: compEmail.value.trim(),
+                website: compWebsite.value.trim(),
+                address: compAddress.value.trim(),
+                bankName: bankName.value.trim(),
+                bankAccNo: bankAccNo.value.trim(),
+                bankIfsc: bankIfsc.value.trim().toUpperCase(),
+                bankBranch: bankBranch.value.trim(),
+                bankUpi: bankUpi.value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                await setDoc(doc(db, 'settings', 'company'), payload, { merge: true });
+                saveStatusMsg.classList.remove('hidden');
+                setTimeout(() => saveStatusMsg.classList.add('hidden'), 3000);
+            } catch (error) {
+                console.error("Error saving profile:", error);
+                alert("Failed to save company profile.");
+            } finally {
+                btnSave.innerHTML = originalText;
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

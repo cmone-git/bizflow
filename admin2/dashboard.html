@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corporate Dashboard - CM FILINGS</title>
+    
+    <!-- PWA & Favicon Assets -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#071D49">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#B10000',
+                            redhover: '#8A0000',
+                            redlight: '#FDF2F2',
+                            navy: '#071D49',
+                            navyhover: '#102a5c',
+                            light: '#F4F5F7',
+                            white: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html { scroll-behavior: smooth; }
+        .hero-pattern {
+            background-color: #F4F5F7;
+            background-image: radial-gradient(rgba(7, 29, 73, 0.05) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* Smooth module view transition */
+        .module-frame {
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-700 bg-brand-light antialiased selection:bg-brand-redlight selection:text-brand-red flex flex-col h-screen overflow-hidden">
+
+    <!-- APP LOADER -->
+    <div id="app-loader" class="fixed inset-0 bg-brand-light z-[200] flex flex-col items-center justify-center">
+        <i data-lucide="loader-2" class="w-10 h-10 text-brand-navy animate-spin mb-4"></i>
+        <p class="text-sm font-bold text-slate-500 tracking-widest uppercase">Loading Corporate Workspace...</p>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="main-app" class="hidden flex h-screen w-screen overflow-hidden">
+        
+        <!-- SIDEBAR (Desktop View) -->
+        <aside class="hidden lg:flex flex-col w-64 bg-brand-navy border-r border-slate-800 text-white shrink-0 z-40">
+            <!-- Brand Header -->
+            <div class="h-20 flex items-center px-6 gap-3 border-b border-slate-800/80">
+                <div class="w-10 h-10 bg-brand-red rounded-xl flex items-center justify-center text-white shadow-md">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-extrabold text-lg tracking-tight leading-none text-white">CM FILINGS</span>
+                    <span class="text-[9px] font-bold text-brand-red uppercase tracking-widest leading-none mt-1">Enterprise Suite</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1.5">
+                <p class="px-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">Main Dashboard</p>
+                
+                <button onclick="switchModule('home', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs bg-brand-red text-white shadow-sm transition-all">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview & Widgets
+                </button>
+
+                <p class="px-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-3">Entity & Masters</p>
+                <button onclick="switchModule('company.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="building" class="w-4 h-4 text-brand-red"></i> Company Master
+                </button>
+                <button onclick="switchModule('branch.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="git-branch" class="w-4 h-4 text-brand-red"></i> Branch Master
+                </button>
+                <button onclick="switchModule('bank.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="landmark" class="w-4 h-4 text-brand-red"></i> Bank Master
+                </button>
+
+                <p class="px-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-3">Operations & Vault</p>
+                <button onclick="switchModule('clients.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="users" class="w-4 h-4 text-brand-red"></i> Clients Directory
+                </button>
+                <button onclick="switchModule('credentials.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="key-round" class="w-4 h-4 text-brand-red"></i> Credentials Vault
+                </button>
+                <button onclick="switchModule('compliance.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-brand-red"></i> Compliance Engine
+                </button>
+
+                <p class="px-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-3">Finance & Billing</p>
+                <button onclick="switchModule('transactions.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="receipt" class="w-4 h-4 text-brand-red"></i> Transactions
+                </button>
+                <button onclick="switchModule('invoice.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="file-text" class="w-4 h-4 text-brand-red"></i> Invoice Generator
+                </button>
+                <button onclick="switchModule('qr.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="qr-code" class="w-4 h-4 text-brand-red"></i> UPI QR Center
+                </button>
+
+                <p class="px-3 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-6 mb-3">System & Tools</p>
+                <button onclick="switchModule('user.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="user-cog" class="w-4 h-4 text-brand-red"></i> User Management
+                </button>
+                <button onclick="switchModule('report.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-red"></i> Reports Vault
+                </button>
+                <button onclick="switchModule('data.html', this)" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-slate-300 hover:bg-white/5 hover:text-white transition-all">
+                    <i data-lucide="database" class="w-4 h-4 text-brand-red"></i> Data Importer
+                </button>
+            </nav>
+
+            <!-- Auth Quick Link / Signin / Signup access -->
+            <div class="p-4 border-t border-slate-800/80 space-y-2">
+                <button onclick="switchModule('signin.html', this)" class="w-full py-2 bg-white/10 text-white rounded-lg font-bold text-[11px] hover:bg-white/20 transition-all">
+                    Sign In / Auth View (`index.html`)
+                </button>
+                <button onclick="switchModule('signup.html', this)" class="w-full py-2 bg-brand-red/20 text-brand-red rounded-lg font-bold text-[11px] hover:bg-brand-red/30 transition-all">
+                    Register User (`signup.html`)
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENT AREA CONTAINER -->
+        <div class="flex-1 flex flex-col h-screen overflow-hidden">
+            
+            <!-- FIXED TOP HEADER -->
+            <header class="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-30">
+                <div class="flex items-center gap-4">
+                    <div class="lg:hidden w-10 h-10 bg-brand-navy rounded-xl flex items-center justify-center text-white">
+                        <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 id="header-module-title" class="text-base sm:text-lg font-extrabold text-brand-navy tracking-tight">Executive Dashboard</h2>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">CM Filings Enterprise Workspace</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 
+                        <span id="admin-user-email">Admin Online</span>
+                    </div>
+                    <button onclick="handleLogout()" class="p-2.5 text-slate-400 hover:text-brand-red bg-slate-50 hover:bg-brand-redlight border border-slate-200 rounded-xl transition-all" title="Sign Out">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- DYNAMIC MODULE VIEWPORT (Where modules render without moving pages) -->
+            <main id="viewport-container" class="flex-1 overflow-y-auto hero-pattern p-4 sm:p-6 lg:p-8">
+                
+                <!-- DEFAULT DASHBOARD OVERVIEW VIEWLET -->
+                <div id="default-home-view" class="module-frame space-y-8 max-w-7xl mx-auto pb-12">
+                    
+                    <!-- KPI Analytics Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+                            <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shrink-0">
+                                <i data-lucide="clock" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Pending Compliance</p>
+                                <h3 class="text-3xl font-black text-brand-navy leading-none" id="kpi-pending-comp">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+                            <div class="w-14 h-14 bg-brand-redlight rounded-2xl flex items-center justify-center text-brand-red shrink-0">
+                                <i data-lucide="indian-rupee" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Total Outstanding Dues</p>
+                                <h3 class="text-3xl font-black text-brand-red leading-none" id="kpi-total-dues">₹0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+                            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shrink-0">
+                                <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Priority Tasks Due</p>
+                                <h3 class="text-3xl font-black text-brand-navy leading-none" id="kpi-priority-tasks">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+                            <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
+                                <i data-lucide="users" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Active Clients</p>
+                                <h3 class="text-3xl font-black text-brand-navy leading-none" id="kpi-active-clients">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Priority Tasks & Calendar Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        
+                        <!-- Priority Pending Task Compliance Table -->
+                        <div class="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-base font-extrabold text-brand-navy flex items-center gap-2">
+                                    <i data-lucide="alert-octagon" class="w-5 h-5 text-brand-red"></i> Priority Pending Task Compliance
+                                </h3>
+                                <button onclick="switchModule('compliance.html')" class="text-xs font-bold text-brand-red hover:underline">View All</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs text-slate-600 whitespace-nowrap">
+                                    <thead class="bg-slate-50 text-slate-400 uppercase font-bold text-[9px] tracking-wider border-b border-slate-200">
+                                        <tr>
+                                            <th class="py-3 px-3 rounded-tl-lg">Task / Filing</th>
+                                            <th class="py-3 px-3">Client Name</th>
+                                            <th class="py-3 px-3">Due Date</th>
+                                            <th class="py-3 px-3 rounded-tr-lg">Priority Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 font-medium">
+                                        <tr>
+                                            <td class="py-3 px-3 font-bold text-brand-navy">GSTR-3B Return</td>
+                                            <td class="py-3 px-3">A-FOUR ENTERPRISES</td>
+                                            <td class="py-3 px-3 font-mono text-brand-red font-bold">20/08/2026</td>
+                                            <td class="py-3 px-3"><span class="bg-brand-redlight text-brand-red px-2 py-0.5 rounded text-[10px] font-bold">Urgent</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-3 px-3 font-bold text-brand-navy">TDS Q1 Return</td>
+                                            <td class="py-3 px-3">AARON SOFAS</td>
+                                            <td class="py-3 px-3 font-mono text-amber-600 font-bold">25/08/2026</td>
+                                            <td class="py-3 px-3"><span class="bg-amber-50 text-amber-600 px-2 py-0.5 rounded text-[10px] font-bold">High</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-3 px-3 font-bold text-brand-navy">Income Tax Audit</td>
+                                            <td class="py-3 px-3">ABDUL KAREEM</td>
+                                            <td class="py-3 px-3 font-mono text-slate-600 font-bold">30/08/2026</td>
+                                            <td class="py-3 px-3"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold">Normal</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Calendar-wise Schedule Widget -->
+                        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+                            <h3 class="text-base font-extrabold text-brand-navy mb-4 flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-5 h-5 text-brand-navy"></i> Calendar Schedule
+                            </h3>
+                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center mb-4">
+                                <p class="text-xs font-extrabold text-brand-navy uppercase tracking-wider" id="calendar-month-year">August 2026</p>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-brand-red/5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-brand-red text-white flex items-center justify-center font-bold text-xs">20</div>
+                                        <div>
+                                            <p class="text-xs font-bold text-brand-navy">GST Return Deadlines</p>
+                                            <p class="text-[10px] text-slate-400">8 Filings Scheduled</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-brand-red">Due Soon</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-brand-navy text-white flex items-center justify-center font-bold text-xs">25</div>
+                                        <div>
+                                            <p class="text-xs font-bold text-brand-navy">TDS Submissions</p>
+                                            <p class="text-[10px] text-slate-400">4 Filings Scheduled</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-slate-500">Upcoming</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- DYNAMIC EMBEDDED MODULE CONTAINER -->
+                <div id="dynamic-module-slot" class="hidden module-frame w-full h-full"></div>
+
+            </main>
+
+            <!-- BOTTOM MOBILE NAVIGATION BAR -->
+            <nav class="lg:hidden h-16 bg-white border-t border-slate-200 flex items-center justify-around px-2 shrink-0 z-30">
+                <button onclick="switchModule('home', this)" class="mobile-nav-btn flex flex-col items-center justify-center text-brand-red">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span class="text-[9px] font-bold mt-1">Home</span>
+                </button>
+                <button onclick="switchModule('clients.html', this)" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-brand-navy">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span class="text-[9px] font-bold mt-1">Clients</span>
+                </button>
+                <button onclick="switchModule('compliance.html', this)" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-brand-navy">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    <span class="text-[9px] font-bold mt-1">Compliance</span>
+                </button>
+                <button onclick="switchModule('invoice.html', this)" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-brand-navy">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span class="text-[9px] font-bold mt-1">Invoices</span>
+                </button>
+                <button onclick="switchModule('credentials.html', this)" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-brand-navy">
+                    <i data-lucide="key-round" class="w-5 h-5"></i>
+                    <span class="text-[9px] font-bold mt-1">Vault</span>
+                </button>
+            </nav>
+
+        </div>
+    </div>
+
+    <!-- CORE DASHBOARD SCRIPT: Single-Page Dynamic Module Injector & Firebase Auth -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXyKSTlmlzkYnH2LW408cVVWV1CPvlfBo",
+            authDomain: "cmfilings-6a37c.firebaseapp.com",
+            projectId: "cmfilings-6a37c",
+            storageBucket: "cmfilings-6a37c.firebasestorage.app",
+            messagingSenderId: "138705123778",
+            appId: "1:138705123778:web:9561bff9f0f5d89bb6fe5b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const appLoader = document.getElementById('app-loader');
+        const mainApp = document.getElementById('main-app');
+        const adminUserEmail = document.getElementById('admin-user-email');
+        
+        const homeView = document.getElementById('default-home-view');
+        const dynamicSlot = document.getElementById('dynamic-module-slot');
+        const headerTitle = document.getElementById('header-module-title');
+
+        // Check authentication state
+        onAuthStateChanged(auth, (user) => {
+            appLoader.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            if (user) {
+                adminUserEmail.textContent = user.email;
+            } else {
+                adminUserEmail.textContent = "Offline Session";
+            }
+        });
+
+        // Global Logout Handler
+        window.handleLogout = async function() {
+            if(confirm("Are you sure you want to sign out?")) {
+                try {
+                    await signOut(auth);
+                    window.location.href = "signin.html";
+                } catch(e) {
+                    window.location.href = "signin.html";
+                }
+            }
+        };
+
+        // Module Switcher Engine (Loads external HTML modules into slot without changing pages)
+        window.switchModule = async function(moduleName, btnElement) {
+            // Update active states on sidebar buttons
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('bg-brand-red', 'text-white', 'shadow-sm');
+                b.classList.add('text-slate-300', 'hover:bg-white/5', 'hover:text-white');
+            });
+            if(btnElement) {
+                btnElement.classList.remove('text-slate-300', 'hover:bg-white/5', 'hover:text-white');
+                btnElement.classList.add('bg-brand-red', 'text-white', 'shadow-sm');
+            }
+
+            if (moduleName === 'home') {
+                headerTitle.textContent = "Executive Dashboard";
+                dynamicSlot.classList.add('hidden');
+                homeView.classList.remove('hidden');
+                return;
+            }
+
+            headerTitle.textContent = moduleName.replace('.html', '').toUpperCase();
+            homeView.classList.add('hidden');
+            dynamicSlot.classList.remove('hidden');
+            dynamicSlot.innerHTML = `<div class="flex items-center justify-center h-full"><i data-lucide="loader-2" class="w-8 h-8 text-brand-navy animate-spin"></i></div>`;
+            lucide.createIcons();
+
+            try {
+                const response = await fetch(moduleName);
+                if (!response.ok) throw new Error("Module not found.");
+                const htmlText = await response.text();
+                
+                // Extract body content from fetched html to avoid nested full documents
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const mainBodyContent = doc.querySelector('main') ? doc.querySelector('main').innerHTML : doc.body.innerHTML;
+
+                dynamicSlot.innerHTML = `<div class="module-frame py-4">${mainBodyContent}</div>`;
+                lucide.createIcons();
+            } catch (err) {
+                dynamicSlot.innerHTML = `
+                    <div class="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-lg mx-auto mt-12 shadow-sm">
+                        <i data-lucide="alert-circle" class="w-12 h-12 text-brand-red mx-auto mb-3"></i>
+                        <h3 class="text-lg font-bold text-brand-navy mb-1">Module View Ready</h3>
+                        <p class="text-xs text-slate-500 mb-4">Ensure <strong>${moduleName}</strong> is uploaded in your root directory to view it live.</p>
+                        <span class="font-mono text-[10px] bg-slate-100 p-2 rounded text-slate-600 block">Target File: ${moduleName}</span>
+                    </div>`;
+                lucide.createIcons();
+            }
+        };
+
+
+        /* ============================================================
+           LIVE DASHBOARD VALUES
+           Reads the same Firestore collections used by the modules.
+        ============================================================ */
+        const pendingEl = document.getElementById("kpi-pending-comp");
+        const duesEl = document.getElementById("kpi-total-dues");
+        const priorityEl = document.getElementById("kpi-priority-tasks");
+        const activeClientsEl = document.getElementById("kpi-active-clients");
+
+        let dashboardClients = [];
+        let dashboardCompliance = [];
+
+        function refreshDashboardKPIs(){
+            const pending = dashboardCompliance.filter(c => String(c.status || "").toLowerCase() !== "completed");
+            const dues = dashboardCompliance
+                .filter(c => String(c.paymentStatus || "").toLowerCase() !== "paid")
+                .reduce((sum,c)=>sum + (parseFloat(c.amount) || 0),0);
+
+            const today = new Date();
+            const next7 = new Date(today);
+            next7.setDate(next7.getDate()+7);
+
+            const priority = pending.filter(c=>{
+                const d = new Date(c.dueDate);
+                return !Number.isNaN(d.getTime()) && d >= new Date(today.getFullYear(),today.getMonth(),today.getDate()) && d <= next7;
+            });
+
+            const active = dashboardClients.filter(c=>{
+                const s=String(c.status || "").toLowerCase();
+                return s === "active" || s === "regular";
+            });
+
+            if(pendingEl) pendingEl.textContent=pending.length;
+            if(duesEl) duesEl.textContent=`₹${dues.toLocaleString("en-IN",{maximumFractionDigits:0})}`;
+            if(priorityEl) priorityEl.textContent=priority.length;
+            if(activeClientsEl) activeClientsEl.textContent=active.length;
+        }
+
+        onSnapshot(collection(db,"clients"), snap=>{
+            dashboardClients=snap.docs.map(d=>({id:d.id,...d.data()}));
+            refreshDashboardKPIs();
+        }, err=>console.error("Dashboard clients:",err));
+
+        onSnapshot(collection(db,"compliances"), snap=>{
+            dashboardCompliance=snap.docs.map(d=>({id:d.id,...d.data()}));
+            refreshDashboardKPIs();
+        }, err=>console.error("Dashboard compliance:",err));
+
+        lucide.createIcons();
+
+</body>
+</html>

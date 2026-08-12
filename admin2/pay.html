@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Payment Generator - CM FILINGS</title>
+    
+    <!-- PWA & Favicon Assets -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#071D49">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#B10000',
+                            redhover: '#8A0000',
+                            redlight: '#FDF2F2',
+                            navy: '#071D49',
+                            navyhover: '#102a5c',
+                            light: '#F4F5F7',
+                            white: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html { scroll-behavior: smooth; }
+        .hero-pattern {
+            background-color: #F4F5F7;
+            background-image: radial-gradient(rgba(7, 29, 73, 0.05) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="font-sans text-slate-700 bg-brand-light antialiased selection:bg-brand-redlight selection:text-brand-red flex flex-col min-h-screen">
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="main-app" class="flex flex-col min-h-screen">
+        
+        <!-- ADMIN NAVIGATION -->
+        <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <a href="#" class="flex items-center gap-3 group">
+                        <div class="w-10 h-10 bg-brand-navy rounded-lg flex items-center justify-center text-white shadow-sm transition-colors">
+                            <i data-lucide="shield" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-extrabold text-xl tracking-tight text-brand-navy leading-none">CM FILINGS</span>
+                            <span class="text-[9px] font-bold text-brand-red uppercase tracking-widest leading-none mt-1">Payment Admin (Local Mode)</span>
+                        </div>
+                    </a>
+
+                    <div class="flex items-center gap-4">
+                        <div class="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-500">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Offline Mode
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN GENERATOR SECTION -->
+        <main class="flex-1 hero-pattern py-12 relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                
+                <div class="mb-10 text-center lg:text-left">
+                    <h2 class="text-xs font-extrabold tracking-widest uppercase text-brand-red mb-2">Request Generator</h2>
+                    <h1 class="text-3xl md:text-4xl font-extrabold text-brand-navy tracking-tight">Create Payment Link</h1>
+                    <p class="text-slate-500 font-medium mt-2">Generate payment links and QR codes instantly without a database.</p>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-8 items-start mb-12">
+                    
+                    <!-- LEFT COLUMN: GENERATION FORM -->
+                    <div class="w-full lg:w-1/2 space-y-6">
+                        <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                            
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-5 mb-6">
+                                <h3 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                                    <i data-lucide="file-edit" class="w-5 h-5 text-brand-red"></i> Client Details
+                                </h3>
+                                <button type="button" id="btn-clear-form" class="text-xs font-bold text-slate-400 hover:text-brand-red transition-colors flex items-center gap-1">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i> Clear
+                                </button>
+                            </div>
+
+                            <form id="admin-form" class="space-y-5">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Client Name *</label>
+                                        <input list="clients-list" type="text" id="req-name" required class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all bg-white font-medium text-slate-800" placeholder="Type name...">
+                                        <datalist id="clients-list"></datalist>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mobile Number *</label>
+                                        <input type="tel" id="req-mobile" required pattern="[0-9]{10}" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all bg-white font-medium text-slate-800" placeholder="10-digit mobile">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Amount (₹) *</label>
+                                    <input type="number" id="req-amount" required min="1" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all bg-white font-extrabold text-xl text-brand-navy" placeholder="0.00">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Service Type / Reason *</label>
+                                    <select id="req-service" required class="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:border-brand-navy focus:ring-1 focus:ring-brand-navy outline-none transition-all bg-white font-medium text-slate-800 appearance-none">
+                                        <option value="" disabled selected>Select service type...</option>
+                                        <option value="Tax Return Filing">Tax Return Filing</option>
+                                        <option value="GST Compliance">GST Compliance</option>
+                                        <option value="Business Advisory">Business Advisory</option>
+                                        <option value="Accounting & Bookkeeping">Accounting & Bookkeeping</option>
+                                        <option value="Company Incorporation">Company Incorporation</option>
+                                        <option value="BIZFLOW Subscription">BIZFLOW Subscription</option>
+                                        <option value="Other Professional Fees">Other Professional Fees</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                        <span>Final Description (Auto-Generated)</span>
+                                        <i data-lucide="lock" class="w-3 h-3 text-brand-red"></i>
+                                    </label>
+                                    <input type="text" id="req-desc" readonly required class="w-full px-4 py-3.5 rounded-xl border border-slate-200 outline-none transition-all bg-slate-50 font-mono text-sm text-slate-500 cursor-not-allowed" placeholder="Name - DDMMYY - Mobile - Service">
+                                </div>
+
+                                <button type="submit" id="btn-generate" class="w-full py-4 bg-brand-red text-white font-bold rounded-xl shadow-[0_8px_20px_rgb(177,0,0,0.2)] hover:bg-brand-redhover transition-colors flex items-center justify-center gap-2 mt-6">
+                                    <i data-lucide="link" class="w-5 h-5"></i> Generate Request Link & QR
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: OUTPUT DISPLAY -->
+                    <div class="w-full lg:w-1/2">
+                        
+                        <!-- Placeholder State -->
+                        <div id="output-placeholder" class="h-full min-h-[500px] flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-3xl text-center p-8 bg-white shadow-sm">
+                            <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-4 border border-slate-100">
+                                <i data-lucide="link-2" class="w-8 h-8"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-slate-400 mb-2">Ready to Generate</h4>
+                            <p class="text-sm font-medium text-slate-400 max-w-xs">Fill out the client details to instantly create a tracked payment link.</p>
+                        </div>
+
+                        <!-- Active Generated State -->
+                        <div id="output-container" class="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl hidden animate-in slide-in-from-right-8 duration-500 relative">
+                            
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-5 mb-6">
+                                <h3 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i> Request Generated
+                                </h3>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Transaction Ref</span>
+                                    <span id="out-ref" class="font-mono text-sm font-bold text-brand-red">PAY/---</span>
+                                </div>
+                                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Amount Due</span>
+                                    <span id="out-amount" class="font-extrabold text-lg text-brand-navy">₹0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-8">
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Client Payment URL</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="out-url" readonly class="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs text-brand-navy outline-none">
+                                    <button id="btn-copy-url" class="px-4 py-3 bg-brand-navy text-white rounded-xl shadow-sm hover:bg-brand-navyhover transition-colors flex items-center justify-center shrink-0" title="Copy Link">
+                                        <i data-lucide="copy" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-6 items-center sm:items-stretch bg-slate-50 border border-slate-100 p-6 rounded-2xl">
+                                <div class="bg-white p-3 border border-slate-200 shadow-sm rounded-xl shrink-0">
+                                    <img id="out-qr" src="" alt="Payment QR" class="w-32 h-32 object-contain">
+                                </div>
+                                <div class="flex flex-col justify-center gap-3 w-full">
+                                    <a id="btn-send-wa" href="#" target="_blank" class="w-full py-3.5 bg-[#25D366] text-white font-bold rounded-xl shadow-md hover:bg-[#20bd5a] transition-colors flex items-center justify-center gap-2">
+                                        <i data-lucide="message-circle" class="w-5 h-5"></i> Send WhatsApp Link
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRACKER TABLE SECTION -->
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm mt-4">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                            <i data-lucide="list" class="w-5 h-5 text-brand-red"></i> Local Tracker
+                        </h3>
+                        <button id="btn-clear-history" class="text-[10px] font-bold text-slate-400 hover:text-brand-red uppercase tracking-widest transition-colors">Clear History</button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-600 whitespace-nowrap">
+                            <thead class="bg-slate-50 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="px-4 py-3 rounded-tl-lg">Date</th>
+                                    <th class="px-4 py-3">Ref No</th>
+                                    <th class="px-4 py-3">Client Name</th>
+                                    <th class="px-4 py-3">Amount</th>
+                                    <th class="px-4 py-3 rounded-tr-lg">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tracker-body" class="divide-y divide-slate-100">
+                                <!-- Data injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="bg-white border-t border-slate-200 pt-8 pb-8 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center text-xs font-medium text-slate-500">
+                <p>&copy; 2026 CM Filings. Offline Admin Tool.</p>
+                <div class="flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-brand-red"></i> Operating Locally</div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        lucide.createIcons();
+
+        // DOM Elements
+        const adminForm = document.getElementById('admin-form');
+        const inputName = document.getElementById('req-name');
+        const inputMobile = document.getElementById('req-mobile');
+        const inputAmount = document.getElementById('req-amount');
+        const inputService = document.getElementById('req-service');
+        const inputDesc = document.getElementById('req-desc');
+        const btnClear = document.getElementById('btn-clear-form');
+        const clientsListDatalist = document.getElementById('clients-list');
+        
+        // Output DOM
+        const placeholder = document.getElementById('output-placeholder');
+        const container = document.getElementById('output-container');
+        const outRef = document.getElementById('out-ref');
+        const outAmount = document.getElementById('out-amount');
+        const outUrl = document.getElementById('out-url');
+        const outQr = document.getElementById('out-qr');
+        const btnCopy = document.getElementById('btn-copy-url');
+        const btnWhatsapp = document.getElementById('btn-send-wa');
+
+        const trackerBody = document.getElementById('tracker-body');
+        const btnClearHistory = document.getElementById('btn-clear-history');
+
+        // ==========================================
+        // LOCAL STORAGE ENGINE
+        // ==========================================
+        let localClients = JSON.parse(localStorage.getItem('cmf_clients')) || [];
+        let localLinks = JSON.parse(localStorage.getItem('cmf_links')) || [];
+
+        function renderClientsList() {
+            clientsListDatalist.innerHTML = ''; 
+            localClients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.name;
+                clientsListDatalist.appendChild(option);
+            });
+        }
+
+        function renderTrackerTable() {
+            trackerBody.innerHTML = '';
+            if(localLinks.length === 0) {
+                trackerBody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">No payment requests generated yet.</td></tr>`;
+                return;
+            }
+
+            // Sort by newest first
+            const sortedLinks = [...localLinks].reverse();
+
+            sortedLinks.forEach(data => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-mono text-xs text-slate-400">${data.date}</td>
+                    <td class="px-4 py-3 font-mono text-xs font-bold text-brand-red">${data.ref}</td>
+                    <td class="px-4 py-3 font-bold text-brand-navy truncate max-w-[150px]">${data.name}</td>
+                    <td class="px-4 py-3 font-bold text-slate-700">₹${data.amount}</td>
+                    <td class="px-4 py-3">
+                        <span class="bg-amber-50 text-amber-600 border border-amber-200 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Pending</span>
+                    </td>
+                `;
+                trackerBody.appendChild(tr);
+            });
+        }
+
+        // Initialize on load
+        renderClientsList();
+        renderTrackerTable();
+
+        // ==========================================
+        // AUTO-FILL LOGIC
+        // ==========================================
+        inputName.addEventListener('input', (e) => {
+            const val = e.target.value.trim().toLowerCase();
+            const matchedClient = localClients.find(c => c.name.toLowerCase() === val);
+            if (matchedClient) {
+                inputMobile.value = matchedClient.mobile;
+            }
+            updateDescription();
+        });
+
+        function updateDescription() {
+            const date = new Date();
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const yy = String(date.getFullYear()).slice(-2);
+            const ddmmyy = `${dd}${mm}${yy}`;
+            
+            const nameVal = inputName.value.trim() || 'ClientName';
+            const mobileVal = inputMobile.value.trim() || 'Mobile';
+            const serviceVal = inputService.value || 'Service';
+            
+            inputDesc.value = `${nameVal} - ${ddmmyy} - ${mobileVal} - ${serviceVal}`;
+        }
+
+        inputMobile.addEventListener('input', updateDescription);
+        inputService.addEventListener('change', updateDescription);
+        
+        btnClear.addEventListener('click', () => {
+            adminForm.reset();
+            updateDescription();
+            placeholder.classList.remove('hidden');
+            container.classList.add('hidden');
+        });
+
+        btnClearHistory.addEventListener('click', () => {
+            if(confirm("Are you sure you want to clear your local link history?")) {
+                localStorage.removeItem('cmf_links');
+                localLinks = [];
+                renderTrackerTable();
+            }
+        });
+
+        // ==========================================
+        // FORM SUBMIT & QR GENERATOR
+        // ==========================================
+        adminForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = inputName.value.trim();
+            const mobile = inputMobile.value.trim();
+            const amount = parseFloat(inputAmount.value).toFixed(2);
+            const desc = inputDesc.value;
+
+            // Generate Ref No: PAYDDMMYY/RANDOM6
+            const date = new Date();
+            const dd = String(date.getDate()).padStart(2, '0');
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const yy = String(date.getFullYear()).slice(-2);
+            const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            // EXACT FORMAT REQUESTED: PAYDDMMYY/RANDOM
+            const refNo = `PAY${dd}${mm}${yy}/${randomStr}`;
+
+            // Generate UPI String & QR
+            const upiId = "cmfilings@upi";
+            const payeeName = encodeURIComponent("CM FILINGS");
+            const transactionNote = encodeURIComponent(`${desc} (Ref: ${refNo})`);
+            const upiString = `upi://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&tr=${refNo}&cu=INR&tn=${transactionNote}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiString)}&margin=10`;
+
+            // Client URL
+            const clientUrl = `https://client.cmfilings.com/payments.html?ref=${encodeURIComponent(refNo)}&am=${amount}&nm=${encodeURIComponent(name)}&mb=${mobile}&desc=${encodeURIComponent(desc)}`;
+
+            // Update Output UI
+            outRef.textContent = refNo;
+            outAmount.textContent = `₹${amount}`;
+            outUrl.value = clientUrl;
+            outQr.src = qrUrl;
+
+            // WhatsApp Msg
+            const waText = `Dear ${name},%0A%0APlease process the payment of *Rs ${amount}* for ${inputService.value}.%0A%0A*Ref No:* ${refNo}%0A%0A*Click the link below to pay via UPI Apps or Credit/Debit Card:*%0A${clientUrl}%0A%0A_This payment link is valid for 24 hours._%0A%0ARegards,%0ACM FILINGS Team`;
+            btnWhatsapp.href = `https://wa.me/91${mobile}?text=${waText}`;
+
+            // Reveal Output
+            placeholder.classList.add('hidden');
+            container.classList.remove('hidden');
+            if(window.innerWidth < 1024) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Save to LocalStorage
+            const newLink = {
+                date: `${dd}/${mm}/${date.getFullYear()}`,
+                ref: refNo,
+                name: name,
+                amount: amount
+            };
+            localLinks.push(newLink);
+            localStorage.setItem('cmf_links', JSON.stringify(localLinks));
+
+            // Save Client if new
+            if(!localClients.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+                localClients.push({ name: name, mobile: mobile });
+                localStorage.setItem('cmf_clients', JSON.stringify(localClients));
+                renderClientsList();
+            }
+
+            renderTrackerTable();
+            adminForm.reset();
+            updateDescription();
+        });
+
+        // Copy URL
+        btnCopy.addEventListener('click', () => {
+            if(!outUrl.value) return;
+            outUrl.select();
+            document.execCommand('copy');
+            
+            const originalHtml = btnCopy.innerHTML;
+            btnCopy.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
+            btnCopy.classList.replace('bg-brand-navy', 'bg-emerald-600');
+            lucide.createIcons();
+
+            setTimeout(() => {
+                btnCopy.innerHTML = originalHtml;
+                btnCopy.classList.replace('bg-emerald-600', 'bg-brand-navy');
+                lucide.createIcons();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

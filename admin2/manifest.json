@@ -1,0 +1,22 @@
+{
+  "name": "CM Filings Enterprise Workspace",
+  "short_name": "CM Filings",
+  "description": "Enterprise Tax, Compliance, and Invoicing Management Suite",
+  "start_url": "/dashboard.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071D49",
+  "theme_color": "#071D49",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

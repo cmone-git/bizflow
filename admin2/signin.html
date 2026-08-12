@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0,
+                   maximum-scale=1.0,
+                   user-scalable=no">
+
+    <title>Sign In - CM FILINGS Admin</title>
+
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#071D49">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#B10000',
+                            redhover: '#8A0000',
+                            redlight: '#FDF2F2',
+                            navy: '#071D49',
+                            navyhover: '#102A5C',
+                            light: '#F4F5F7',
+                            white: '#FFFFFF'
+                        }
+                    },
+
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        .hero-pattern {
+            background-color: #F4F5F7;
+
+            background-image:
+                radial-gradient(
+                    rgba(7, 29, 73, 0.05) 1px,
+                    transparent 1px
+                );
+
+            background-size: 28px 28px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+
+<body class="font-sans text-slate-700
+             bg-brand-light antialiased
+             selection:bg-brand-redlight
+             selection:text-brand-red
+             min-h-screen">
+
+
+<!-- =====================================================
+     AUTH LOADER
+====================================================== -->
+
+<div id="auth-loader"
+     class="hidden fixed inset-0 z-[9999]
+            bg-brand-light
+            flex flex-col
+            items-center
+            justify-center">
+
+    <div class="w-14 h-14
+                bg-brand-navy
+                rounded-2xl
+                flex items-center
+                justify-center
+                text-white
+                shadow-lg
+                mb-5">
+
+        <i data-lucide="shield-check"
+           class="w-7 h-7"></i>
+
+    </div>
+
+    <i data-lucide="loader-2"
+       class="w-7 h-7 text-brand-red
+              animate-spin mb-4"></i>
+
+    <p class="text-sm font-bold
+              text-brand-navy
+              tracking-widest uppercase">
+
+        Verifying Access
+
+    </p>
+
+    <p class="text-[10px] text-slate-400 mt-2">
+
+        Checking administrator role...
+
+    </p>
+
+</div>
+
+
+<!-- =====================================================
+     LOGIN PAGE
+====================================================== -->
+
+<div id="login-page"
+     class="hero-pattern
+            min-h-screen
+            flex flex-col
+            items-center
+            justify-center
+            p-4">
+
+
+    <div class="bg-white
+                p-8 md:p-12
+                rounded-3xl
+                shadow-xl
+                border border-slate-200
+                w-full max-w-md">
+
+
+        <!-- BRAND -->
+
+        <div class="flex flex-col
+                    items-center
+                    mb-8
+                    text-center">
+
+            <div class="w-14 h-14
+                        bg-brand-navy
+                        rounded-2xl
+                        flex items-center
+                        justify-center
+                        text-white
+                        shadow-sm
+                        mb-4">
+
+                <i data-lucide="shield-check"
+                   class="w-7 h-7"></i>
+
+            </div>
+
+            <h1 class="text-2xl
+                       font-extrabold
+                       text-brand-navy
+                       tracking-tight">
+
+                CM FILINGS
+
+            </h1>
+
+            <p class="text-[10px]
+                      font-bold
+                      text-brand-red
+                      uppercase
+                      tracking-widest
+                      mt-1">
+
+                Secure Admin Portal
+
+            </p>
+
+        </div>
+
+
+        <!-- ERROR -->
+
+        <div id="auth-error"
+             class="hidden
+                    bg-brand-redlight
+                    text-brand-red
+                    text-xs
+                    font-bold
+                    p-3
+                    rounded-xl
+                    border border-brand-red/20
+                    mb-5
+                    text-center">
+        </div>
+
+
+        <!-- SUCCESS -->
+
+        <div id="auth-success"
+             class="hidden
+                    bg-emerald-50
+                    text-emerald-600
+                    text-xs
+                    font-bold
+                    p-3
+                    rounded-xl
+                    border border-emerald-200
+                    mb-5
+                    text-center">
+        </div>
+
+
+        <!-- LOGIN FORM -->
+
+        <form id="signin-form"
+              class="space-y-4">
+
+
+            <div>
+
+                <label class="block
+                              text-xs
+                              font-bold
+                              text-slate-500
+                              uppercase
+                              tracking-wider
+                              mb-2">
+
+                    Admin Email
+
+                </label>
+
+                <input
+                    type="email"
+                    id="signin-email"
+                    required
+                    autocomplete="username"
+                    class="w-full
+                           px-4 py-3.5
+                           rounded-xl
+                           border border-slate-300
+                           focus:border-brand-navy
+                           focus:ring-2
+                           focus:ring-brand-navy/10
+                           outline-none
+                           bg-slate-50
+                           font-medium
+                           text-slate-800
+                           text-sm"
+                    placeholder="Enter your email">
+
+            </div>
+
+
+            <div>
+
+                <div class="flex
+                            justify-between
+                            items-center
+                            mb-2">
+
+                    <label class="text-xs
+                                  font-bold
+                                  text-slate-500
+                                  uppercase
+                                  tracking-wider">
+
+                        Password
+
+                    </label>
+
+                    <button
+                        type="button"
+                        id="btn-forgot-trigger"
+                        class="text-xs
+                               font-bold
+                               text-brand-red
+                               hover:underline">
+
+                        Forgot password?
+
+                    </button>
+
+                </div>
+
+
+                <div class="relative">
+
+                    <input
+                        type="password"
+                        id="signin-password"
+                        required
+                        autocomplete="current-password"
+                        class="w-full
+                               px-4 py-3.5
+                               pr-12
+                               rounded-xl
+                               border border-slate-300
+                               focus:border-brand-navy
+                               focus:ring-2
+                               focus:ring-brand-navy/10
+                               outline-none
+                               bg-slate-50
+                               font-medium
+                               text-slate-800
+                               text-sm"
+                        placeholder="••••••••">
+
+
+                    <button
+                        type="button"
+                        id="btn-toggle-password"
+                        class="absolute
+                               right-3.5
+                               top-3.5
+                               text-slate-400">
+
+                        <i data-lucide="eye"
+                           class="w-5 h-5"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                id="btn-submit"
+                class="w-full
+                       py-4
+                       bg-brand-red
+                       text-white
+                       font-bold
+                       rounded-xl
+                       shadow-[0_8px_20px_rgb(177,0,0,0.2)]
+                       hover:bg-brand-redhover
+                       transition-colors
+                       flex items-center
+                       justify-center
+                       gap-2
+                       text-sm">
+
+                <i data-lucide="log-in"
+                   class="w-5 h-5"></i>
+
+                Sign In to Dashboard
+
+            </button>
+
+        </form>
+
+
+        <!-- SECURITY -->
+
+        <div class="mt-6
+                    pt-5
+                    border-t
+                    border-slate-100
+                    text-center">
+
+            <div class="flex
+                        items-center
+                        justify-center
+                        gap-2
+                        text-[10px]
+                        text-slate-400
+                        font-medium">
+
+                <i data-lucide="shield-check"
+                   class="w-3.5 h-3.5
+                          text-emerald-500"></i>
+
+                Access controlled by
+                Firebase Authentication & Firestore Role
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="mt-8
+                text-center
+                text-xs
+                font-medium
+                text-slate-400">
+
+        © 2026 CM Filings. All rights reserved.
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     FORGOT PASSWORD
+====================================================== -->
+
+<div id="forgot-modal"
+     class="hidden fixed inset-0
+            bg-brand-navy/50
+            backdrop-blur-sm
+            z-[100]
+            flex items-center
+            justify-center p-4">
+
+    <div class="bg-white
+                rounded-3xl
+                p-8
+                max-w-sm
+                w-full
+                shadow-2xl">
+
+
+        <div class="flex
+                    justify-between
+                    items-center mb-4">
+
+            <h3 class="text-lg
+                       font-bold
+                       text-brand-navy">
+
+                Reset Password
+
+            </h3>
+
+            <button
+                id="btn-close-modal"
+                type="button"
+                class="text-slate-400
+                       hover:text-brand-red">
+
+                <i data-lucide="x"
+                   class="w-5 h-5"></i>
+
+            </button>
+
+        </div>
+
+
+        <p class="text-xs
+                  text-slate-500
+                  mb-5">
+
+            Enter your registered email
+            to receive a password reset link.
+
+        </p>
+
+
+        <input
+            type="email"
+            id="reset-email"
+            class="w-full
+                   px-4 py-3
+                   rounded-xl
+                   border border-slate-300
+                   bg-slate-50
+                   text-sm
+                   mb-4"
+            placeholder="Email address">
+
+
+        <button
+            id="btn-send-reset"
+            type="button"
+            class="w-full
+                   py-3.5
+                   bg-brand-navy
+                   text-white
+                   font-bold
+                   rounded-xl
+                   flex items-center
+                   justify-center
+                   gap-2">
+
+            <i data-lucide="mail"
+               class="w-4 h-4"></i>
+
+            Send Reset Link
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     FIREBASE
+====================================================== -->
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+
+
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+import {
+    getFirestore,
+    doc,
+    getDoc,
+    collection,
+    query,
+    where,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+/* =====================================================
+   FIREBASE CONFIG
+====================================================== */
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyCXyKSTlmlzkYnH2LW408cVVWV1CPvlfBo",
+
+    authDomain:
+        "cmfilings-6a37c.firebaseapp.com",
+
+    projectId:
+        "cmfilings-6a37c",
+
+    storageBucket:
+        "cmfilings-6a37c.firebasestorage.app",
+
+    messagingSenderId:
+        "138705123778",
+
+    appId:
+        "1:138705123778:web:9561bff9f0f5d89bb6fe5b"
+
+};
+
+
+const app =
+    initializeApp(firebaseConfig);
+
+const auth =
+    getAuth(app);
+
+const db =
+    getFirestore(app);
+
+
+lucide.createIcons();
+
+
+/* =====================================================
+   ELEMENTS
+====================================================== */
+
+const loginPage =
+    document.getElementById("login-page");
+
+const authLoader =
+    document.getElementById("auth-loader");
+
+const signinForm =
+    document.getElementById("signin-form");
+
+const inputEmail =
+    document.getElementById("signin-email");
+
+const inputPassword =
+    document.getElementById("signin-password");
+
+const btnSubmit =
+    document.getElementById("btn-submit");
+
+const authError =
+    document.getElementById("auth-error");
+
+const authSuccess =
+    document.getElementById("auth-success");
+
+const btnTogglePassword =
+    document.getElementById("btn-toggle-password");
+
+const forgotModal =
+    document.getElementById("forgot-modal");
+
+const btnForgotTrigger =
+    document.getElementById("btn-forgot-trigger");
+
+const btnCloseModal =
+    document.getElementById("btn-close-modal");
+
+const resetEmail =
+    document.getElementById("reset-email");
+
+const btnSendReset =
+    document.getElementById("btn-send-reset");
+
+
+/* =====================================================
+   ERROR
+====================================================== */
+
+function showError(message) {
+
+    authSuccess.classList.add("hidden");
+
+    authError.textContent = message;
+
+    authError.classList.remove("hidden");
+
+}
+
+
+/* =====================================================
+   SUCCESS
+====================================================== */
+
+function showSuccess(message) {
+
+    authError.classList.add("hidden");
+
+    authSuccess.textContent = message;
+
+    authSuccess.classList.remove("hidden");
+
+}
+
+
+/* =====================================================
+   GET FIRESTORE USER ROLE
+====================================================== */
+
+async function getUserRole(user) {
+
+    try {
+
+        /*
+         * FIRST:
+         * Try document ID = Firebase Authentication UID.
+         */
+
+        const uidRef =
+            doc(db, "users", user.uid);
+
+        const uidSnap =
+            await getDoc(uidRef);
+
+
+        if (uidSnap.exists()) {
+
+            const data =
+                uidSnap.data();
+
+            return data.role || null;
+
+        }
+
+
+        /*
+         * FALLBACK:
+         * Search users collection by email.
+         *
+         * This supports your current database
+         * if your document ID isn't the Firebase UID.
+         */
+
+        const usersRef =
+            collection(db, "users");
+
+        const emailQuery =
+            query(
+                usersRef,
+                where("email", "==", user.email)
+            );
+
+        const result =
+            await getDocs(emailQuery);
+
+
+        if (!result.empty) {
+
+            const data =
+                result.docs[0].data();
+
+            return data.role || null;
+
+        }
+
+
+        return null;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Firestore role lookup failed:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+/* =====================================================
+   CHECK ADMIN
+====================================================== */
+
+async function checkAdmin(user) {
+
+    const role =
+        await getUserRole(user);
+
+    console.log(
+        "Logged-in user:",
+        user.email
+    );
+
+    console.log(
+        "Firestore role:",
+        role
+    );
+
+
+    return role === "admin";
+
+}
+
+
+/* =====================================================
+   AUTH STATE
+====================================================== */
+
+onAuthStateChanged(
+    auth,
+    async (user) => {
+
+        if (!user) {
+
+            authLoader.classList.add("hidden");
+
+            loginPage.classList.remove("hidden");
+
+            return;
+
+        }
+
+
+        loginPage.classList.add("hidden");
+
+        authLoader.classList.remove("hidden");
+
+
+        const admin =
+            await checkAdmin(user);
+
+
+        if (admin) {
+
+            window.location.replace(
+                "index.html"
+            );
+
+            return;
+
+        }
+
+
+        await signOut(auth);
+
+
+        authLoader.classList.add("hidden");
+
+        loginPage.classList.remove("hidden");
+
+
+        showError(
+            "Access denied. This account does not have administrator privileges."
+        );
+
+    }
+);
+
+
+/* =====================================================
+   PASSWORD VISIBILITY
+====================================================== */
+
+btnTogglePassword.addEventListener(
+    "click",
+    () => {
+
+        if (
+            inputPassword.type === "password"
+        ) {
+
+            inputPassword.type = "text";
+
+            btnTogglePassword.innerHTML =
+                `<i data-lucide="eye-off"
+                    class="w-5 h-5"></i>`;
+
+        }
+
+        else {
+
+            inputPassword.type = "password";
+
+            btnTogglePassword.innerHTML =
+                `<i data-lucide="eye"
+                    class="w-5 h-5"></i>`;
+
+        }
+
+        lucide.createIcons();
+
+    }
+);
+
+
+/* =====================================================
+   SIGN IN
+====================================================== */
+
+signinForm.addEventListener(
+    "submit",
+    async (event) => {
+
+        event.preventDefault();
+
+
+        const email =
+            inputEmail.value.trim();
+
+        const password =
+            inputPassword.value;
+
+
+        if (!email || !password) {
+
+            showError(
+                "Please enter your email and password."
+            );
+
+            return;
+
+        }
+
+
+        const original =
+            btnSubmit.innerHTML;
+
+
+        btnSubmit.disabled = true;
+
+        btnSubmit.innerHTML = `
+            <i data-lucide="loader-2"
+               class="w-5 h-5 animate-spin">
+            </i>
+            Authenticating...
+        `;
+
+        authError.classList.add("hidden");
+
+        lucide.createIcons();
+
+
+        try {
+
+            /*
+             * Firebase Authentication
+             */
+
+            const credential =
+                await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
+
+
+            /*
+             * Firestore role check
+             */
+
+            const admin =
+                await checkAdmin(
+                    credential.user
+                );
+
+
+            if (!admin) {
+
+                await signOut(auth);
+
+                showError(
+                    "Login successful, but this account is not authorized for the CM FILINGS Administrator Portal."
+                );
+
+                btnSubmit.disabled = false;
+
+                btnSubmit.innerHTML =
+                    original;
+
+                lucide.createIcons();
+
+                return;
+
+            }
+
+
+            /*
+             * ADMIN VERIFIED
+             */
+
+            showSuccess(
+                "Administrator verified. Opening dashboard..."
+            );
+
+
+            btnSubmit.innerHTML = `
+                <i data-lucide="check"
+                   class="w-5 h-5"></i>
+                Access Granted
+            `;
+
+            lucide.createIcons();
+
+
+            window.location.replace(
+                "index.html"
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Sign-in error:",
+                error
+            );
+
+
+            let message =
+                "Invalid email or password.";
+
+
+            switch (error.code) {
+
+                case "auth/invalid-credential":
+                    message =
+                        "Invalid email or password.";
+                    break;
+
+                case "auth/user-not-found":
+                    message =
+                        "No account was found with this email.";
+                    break;
+
+                case "auth/wrong-password":
+                    message =
+                        "Incorrect password.";
+                    break;
+
+                case "auth/invalid-email":
+                    message =
+                        "Please enter a valid email address.";
+                    break;
+
+                case "auth/user-disabled":
+                    message =
+                        "This account has been disabled.";
+                    break;
+
+                case "auth/too-many-requests":
+                    message =
+                        "Too many attempts. Please try again later.";
+                    break;
+
+                case "auth/network-request-failed":
+                    message =
+                        "Network error. Please check your connection.";
+                    break;
+
+            }
+
+
+            showError(message);
+
+
+            btnSubmit.disabled = false;
+
+            btnSubmit.innerHTML =
+                original;
+
+            lucide.createIcons();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   FORGOT PASSWORD
+====================================================== */
+
+btnForgotTrigger.addEventListener(
+    "click",
+    () => {
+
+        resetEmail.value =
+            inputEmail.value;
+
+        forgotModal.classList.remove(
+            "hidden"
+        );
+
+    }
+);
+
+
+/* =====================================================
+   CLOSE MODAL
+====================================================== */
+
+btnCloseModal.addEventListener(
+    "click",
+    () => {
+
+        forgotModal.classList.add(
+            "hidden"
+        );
+
+    }
+);
+
+
+forgotModal.addEventListener(
+    "click",
+    (event) => {
+
+        if (
+            event.target === forgotModal
+        ) {
+
+            forgotModal.classList.add(
+                "hidden"
+            );
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   RESET PASSWORD
+====================================================== */
+
+btnSendReset.addEventListener(
+    "click",
+    async () => {
+
+        const email =
+            resetEmail.value.trim();
+
+
+        if (!email) {
+
+            alert(
+                "Please enter your email address."
+            );
+
+            return;
+
+        }
+
+
+        const original =
+            btnSendReset.innerHTML;
+
+
+        btnSendReset.disabled = true;
+
+        btnSendReset.innerHTML = `
+            <i data-lucide="loader-2"
+               class="w-4 h-4 animate-spin"></i>
+            Sending...
+        `;
+
+        lucide.createIcons();
+
+
+        try {
+
+            await sendPasswordResetEmail(
+                auth,
+                email
+            );
+
+
+            forgotModal.classList.add(
+                "hidden"
+            );
+
+
+            showSuccess(
+                "Password reset link sent. Please check your inbox."
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Password reset error:",
+                error
+            );
+
+            showError(
+                "Unable to send password reset email."
+            );
+
+        }
+
+        finally {
+
+            btnSendReset.disabled = false;
+
+            btnSendReset.innerHTML =
+                original;
+
+            lucide.createIcons();
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>

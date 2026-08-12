@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CM FILINGS Admin</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<meta name="theme-color" content="#FFFFFF">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:Inter,Arial,sans-serif;background:#F4F5F7}
+#app{width:100%;height:100dvh;min-height:100vh;display:flex;flex-direction:column}
+#app-header{height:70px;min-height:70px;flex-shrink:0;background:rgba(255,255,255,.98);border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:1000}
+.header-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.header-logo{width:42px;height:42px;object-fit:contain;flex-shrink:0}
+.header-name{height:27px;width:auto;max-width:155px;object-fit:contain}
+.logo-fallback{display:none;width:42px;height:42px;border-radius:12px;background:#071D49;color:#fff;align-items:center;justify-content:center}
+.name-fallback{display:none;font-weight:900;color:#071D49;font-size:18px;letter-spacing:-.5px}
+.header-actions{display:flex;align-items:center;gap:7px}
+.header-action{width:42px;height:42px;border:1px solid #E2E8F0;background:#F8FAFC;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#64748B}
+.header-action:active{transform:scale(.95)}
+#module-container{flex:1;min-height:0;position:relative;overflow:hidden;background:#F4F5F7}
+#module-frame{width:100%;height:100%;border:0;display:block;background:#F4F5F7}
+#bottom-nav{height:78px;min-height:78px;flex-shrink:0;background:#fff;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:repeat(5,1fr);z-index:1000;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#94A3B8;font-size:10px;font-weight:800;cursor:pointer}
+.nav-item svg{width:22px;height:22px}
+.nav-item.active{color:#B10000}
+.nav-item.active svg{stroke-width:2.6}
+#global-search{position:fixed;top:70px;left:0;right:0;background:#fff;border-bottom:1px solid #E2E8F0;padding:10px 14px;z-index:1800;display:none}
+#global-search.show{display:block}
+.global-search-box{display:flex;align-items:center;gap:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:0 11px}
+.global-search-box input{width:100%;border:0;outline:0;background:transparent;padding:11px 0;font-size:13px;font-weight:600}
+.global-search-box button{border:0;background:transparent;color:#64748B}
+#more-menu{position:fixed;left:12px;right:12px;bottom:88px;background:#fff;border:1px solid #E2E8F0;border-radius:18px;padding:8px;box-shadow:0 18px 45px rgba(0,0,0,.16);z-index:2000;display:none;max-height:70vh;overflow:auto}
+#more-menu.show{display:block}
+.more-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px;background:transparent;border:0;border-radius:11px;color:#334155;font-size:13px;font-weight:750;text-align:left}
+.more-item:active{background:#F8FAFC}
+#profile-menu{position:fixed;right:12px;top:60px;width:min(300px,calc(100vw - 24px));background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:12px;box-shadow:0 18px 45px rgba(0,0,0,.16);z-index:2100;display:none}
+#profile-menu.show{display:block}
+@media(min-width:768px){
+ #app-header{padding:0 28px}
+ #bottom-nav{max-width:760px;margin:0 auto;width:100%;border:1px solid #E2E8F0;border-bottom:0;border-radius:18px 18px 0 0}
+ #more-menu{left:auto;width:360px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header id="app-header">
+<div class="header-brand">
+<img src="assets/logo.png" class="header-logo" alt="CM Filings logo"
+     onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+<div id="logo-fallback" class="logo-fallback"><i data-lucide="shield-check"></i></div>
+<img src="assets/name.png" class="header-name" alt="CM Filings"
+     onerror="this.style.display='none';document.getElementById('name-fallback').style.display='block'">
+<div id="name-fallback" class="name-fallback">CM FILINGS</div>
+</div>
+<div class="header-actions">
+<button id="global-search-btn" class="header-action" title="Search"><i data-lucide="search" class="w-5 h-5"></i></button>
+<button id="profile-btn" class="header-action" title="Profile"><i data-lucide="user-circle" class="w-5 h-5"></i></button>
+</div>
+</header>
+
+<div id="global-search">
+<div class="global-search-box">
+<i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+<input id="global-search-input" type="search" placeholder="Search current module...">
+<button id="close-global-search"><i data-lucide="x" class="w-4 h-4"></i></button>
+</div>
+</div>
+
+<main id="module-container">
+<iframe id="module-frame" src="dashboard.html" title="CM Filings Admin Module"></iframe>
+</main>
+
+<div id="profile-menu">
+<div class="px-2 py-2 border-b border-slate-100">
+<p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Signed in as</p>
+<p id="profile-email" class="text-sm font-bold text-slate-700 mt-1 break-all">Admin</p>
+<p class="text-[10px] text-emerald-600 font-bold mt-1 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Administrator</p>
+</div>
+<button id="profile-signout" class="w-full mt-2 px-3 py-2.5 rounded-xl bg-red-50 text-[#B10000] font-bold text-xs flex items-center gap-2">
+<i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+</button>
+</div>
+
+<div id="more-menu">
+<button class="more-item" data-page="company.html" data-title="Company"><i data-lucide="building-2"></i><span>Company</span></button>
+<button class="more-item" data-page="calender.html" data-title="Compliance Calendar"><i data-lucide="calendar-days"></i><span>Compliance Calendar</span></button>
+<button class="more-item" data-page="contacts.html" data-title="Contacts"><i data-lucide="contact"></i><span>Contacts</span></button>
+<button class="more-item" data-page="contact.html" data-title="Contact"><i data-lucide="message-square"></i><span>Contact</span></button>
+<button class="more-item" data-page="data-import.html" data-title="Data Import"><i data-lucide="database-zap"></i><span>Data Import</span></button>
+<button class="more-item" data-page="invoice.html" data-title="Invoice"><i data-lucide="file-text"></i><span>Invoice</span></button>
+<button class="more-item" data-page="pay.html" data-title="Payments"><i data-lucide="credit-card"></i><span>Payments</span></button>
+<button class="more-item" data-page="transactions.html" data-title="Transactions"><i data-lucide="receipt"></i><span>Transactions</span></button>
+</div>
+
+<nav id="bottom-nav">
+<button class="nav-item active" data-page="dashboard.html" data-title="Dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></button>
+<button class="nav-item" data-page="clients.html" data-title="Clients"><i data-lucide="users"></i><span>Clients</span></button>
+<button class="nav-item" data-page="compliance.html" data-title="Compliance"><i data-lucide="clipboard-check"></i><span>Compliance</span></button>
+<button class="nav-item" data-page="credentials.html" data-title="Credentials"><i data-lucide="key-round"></i><span>Credentials</span></button>
+<button class="nav-item" id="more-btn"><i data-lucide="menu"></i><span>Menu</span></button>
+</nav>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const frame=document.getElementById("module-frame");
+const moreBtn=document.getElementById("more-btn");
+const moreMenu=document.getElementById("more-menu");
+const profileBtn=document.getElementById("profile-btn");
+const profileMenu=document.getElementById("profile-menu");
+const profileEmail=document.getElementById("profile-email");
+const profileSignout=document.getElementById("profile-signout");
+const globalSearchBtn=document.getElementById("global-search-btn");
+const globalSearch=document.getElementById("global-search");
+const closeGlobalSearch=document.getElementById("close-global-search");
+const globalSearchInput=document.getElementById("global-search-input");
+
+let currentPage="dashboard.html";
+let currentUser=null;
+
+function pageTitle(page){
+ return ({
+  "dashboard.html":"Dashboard","clients.html":"Clients","compliance.html":"Compliance",
+  "credentials.html":"Credentials","company.html":"Company","calender.html":"Compliance Calendar",
+  "contacts.html":"Contacts","contact.html":"Contact","data-import.html":"Data Import",
+  "invoice.html":"Invoice","pay.html":"Payments","transactions.html":"Transactions"
+ }[page] || page.replace(".html",""));
+}
+
+function updateActive(page){
+ document.querySelectorAll(".nav-item[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));
+}
+
+function loadModule(page){
+ currentPage=page;
+ moreMenu.classList.remove("show");
+ profileMenu.classList.remove("show");
+ globalSearch.classList.remove("show");
+ globalSearchInput.value="";
+ updateActive(page);
+ frame.src=page;
+}
+
+function deny(){
+ window.location.replace("signin.html?error=admin_required");
+}
+
+onAuthStateChanged(auth, async user=>{
+ if(!user){ window.location.replace("signin.html?error=login_required"); return; }
+ currentUser=user;
+ profileEmail.textContent=user.email || "Administrator";
+ try{
+   const snap=await getDoc(doc(db,"users",user.uid));
+   const data=snap.exists()?snap.data():{};
+   if(data.role!=="admin") { await signOut(auth); deny(); return; }
+ }catch(e){
+   console.error("Admin role verification failed:",e);
+   await signOut(auth);
+   deny();
+ }
+});
+
+document.querySelectorAll(".nav-item[data-page]").forEach(item=>item.addEventListener("click",()=>loadModule(item.dataset.page)));
+document.querySelectorAll(".more-item").forEach(item=>item.addEventListener("click",()=>loadModule(item.dataset.page)));
+
+moreBtn.addEventListener("click",e=>{e.stopPropagation();moreMenu.classList.toggle("show");profileMenu.classList.remove("show")});
+profileBtn.addEventListener("click",e=>{e.stopPropagation();profileMenu.classList.toggle("show");moreMenu.classList.remove("show")});
+document.addEventListener("click",e=>{
+ if(!moreMenu.contains(e.target) && e.target!==moreBtn) moreMenu.classList.remove("show");
+ if(!profileMenu.contains(e.target) && e.target!==profileBtn) profileMenu.classList.remove("show");
+});
+
+profileSignout.addEventListener("click",async()=>{
+ await signOut(auth);
+ window.location.replace("signin.html");
+});
+
+globalSearchBtn.addEventListener("click",()=>{globalSearch.classList.add("show");globalSearchInput.focus()});
+closeGlobalSearch.addEventListener("click",()=>{globalSearch.classList.remove("show");globalSearchInput.value=""});
+globalSearchInput.addEventListener("input",()=>frame.contentWindow?.postMessage({type:"GLOBAL_SEARCH",value:globalSearchInput.value},"*"));
+
+function bridgeIframe(){
+ const w=frame.contentWindow;
+ if(!w) return;
+ try{
+   /* Remove duplicate shell elements from the old standalone modules. */
+   const style=w.document.createElement("style");
+   style.id="cm-shell-embedded-style";
+   style.textContent=`
+     html,body{height:auto!important;min-height:100%!important;overflow:auto!important}
+     body{padding-bottom:92px!important}
+     body>header, body>footer, body>nav, #main-app>header, #main-app>nav, #main-app>aside,
+     #main-app>footer, aside, .lg\\\\:hidden{display:none!important}
+     #main-app{height:auto!important;min-height:100%!important;display:block!important;overflow:visible!important}
+     #viewport-container{height:auto!important;min-height:100%!important;overflow:visible!important}
+     #module-frame{height:auto!important;min-height:100%!important}
+   `;
+   w.document.head.appendChild(style);
+
+   /* Keep module actions, but remove their duplicate CM FILINGS branding. */
+   w.document.querySelectorAll("header").forEach(h=>{
+      h.style.position="relative";
+      h.style.top="auto";
+      h.style.zIndex="10";
+      const firstLink=h.querySelector("a");
+      if(firstLink && /CM FILINGS/i.test(firstLink.textContent||"")) firstLink.style.display="none";
+      const titleFromPage=pageTitle(currentPage);
+      if(!h.querySelector(".cm-shell-module-title")){
+        const wrap=h.querySelector(".max-w-7xl > div") || h.firstElementChild;
+        if(wrap){
+          const title=document.createElement("div");
+          title.className="cm-shell-module-title";
+          title.innerHTML='<div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:10px;background:#071D49;color:white;display:flex;align-items:center;justify-content:center"><i data-lucide="panel-top"></i></div><div><div style="font-size:18px;font-weight:900;color:#071D49">'+titleFromPage+'</div><div style="font-size:9px;font-weight:800;color:#B10000;letter-spacing:.12em;text-transform:uppercase">CM FILINGS ADMIN</div></div></div>';
+          wrap.insertBefore(title,wrap.firstChild);
+        }
+      }
+   });
+
+   /* Dashboard has its own switchModule engine. Redirect its buttons to the permanent shell. */
+   if(typeof w.switchModule==="function"){
+     w.switchModule=(name)=>{
+       if(name==="home") parent.postMessage({type:"CM_LOAD_MODULE",page:"dashboard.html"},"*");
+       else parent.postMessage({type:"CM_LOAD_MODULE",page:name},"*");
+     };
+   }
+
+   /* Existing module links should stay inside the permanent shell. */
+   w.document.addEventListener("click",ev=>{
+     const a=ev.target.closest && ev.target.closest("a");
+     if(!a) return;
+     const href=a.getAttribute("href")||"";
+     const target=href.split("#")[0].split("?")[0];
+     if(target.endsWith(".html")){
+       ev.preventDefault();
+       parent.postMessage({type:"CM_LOAD_MODULE",page:target},"*");
+     }
+   },true);
+
+   /* Fire any icon replacements after injected title. */
+   if(w.lucide) w.lucide.createIcons();
+ }catch(e){console.warn("Embedded module bridge:",e)}
+}
+
+frame.addEventListener("load",()=>{
+ setTimeout(bridgeIframe,120);
+});
+
+window.addEventListener("message",e=>{
+ if(!e.data) return;
+ if(e.data.type==="CM_LOAD_MODULE" && typeof e.data.page==="string"){
+   const allowed=["dashboard.html","clients.html","compliance.html","credentials.html","company.html","calender.html","contacts.html","contact.html","data-import.html","invoice.html","pay.html","transactions.html"];
+   if(allowed.includes(e.data.page)) loadModule(e.data.page);
+ }
+ if(e.data.type==="GLOBAL_SEARCH"){
+   globalSearchInput.value=e.data.value||"";
+ }
+});
+
+lucide.createIcons();
+</script>
+</body>
+</html>

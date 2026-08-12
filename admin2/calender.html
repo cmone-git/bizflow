@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="CM Filings FY 2026-27 Compliance Calendar – India tax, GST, TDS, PF, ESI and corporate compliance due dates.">
+<title>FY 2026–27 Compliance Calendar | CM Filings</title>
+<!-- Google Fonts: Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Tailwind CSS for Modern Corporate Styling -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    brand: {
+                        red: '#B10000',
+                        redhover: '#8A0000',
+                        redlight: '#FDF2F2',
+                        navy: '#071D49',
+                        navyhover: '#102a5c',
+                        light: '#F4F5F7',
+                        white: '#FFFFFF'
+                    }
+                },
+                fontFamily: { sans: ['Inter', 'sans-serif'] }
+            }
+        }
+    }
+</script>
+<style>
+    html { scroll-behavior: smooth; }
+    .hero-pattern {
+        background-color: #F4F5F7;
+        background-image: radial-gradient(rgba(7, 29, 73, 0.05) 1px, transparent 1px);
+        background-size: 28px 28px;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+</style>
+</head>
+<body class="font-sans text-slate-700 bg-brand-light antialiased selection:bg-brand-redlight selection:text-brand-red flex flex-col min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
+      <a class="flex items-center gap-3 group" href="/">
+        <div class="w-10 h-10 bg-brand-navy rounded-lg flex items-center justify-center text-white shadow-sm transition-colors">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+        </div>
+        <div class="flex flex-col">
+            <span class="font-extrabold text-xl tracking-tight text-brand-navy leading-none">CM FILINGS</span>
+            <span class="text-[9px] font-bold text-brand-red uppercase tracking-widest leading-none mt-1">Compliance Engine</span>
+        </div>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-xs font-bold text-slate-600">
+        <a href="/" class="hover:text-brand-navy transition-colors">Home</a>
+        <a href="/compliance-calendar.html" class="text-brand-red">Compliance Calendar</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- HERO SECTION -->
+<section class="hero-pattern py-12 border-b border-slate-200">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="max-w-3xl">
+      <span class="text-xs font-extrabold tracking-widest uppercase text-brand-red mb-2 block">CM Filings • Tax & Compliance</span>
+      <h1 class="text-3xl md:text-5xl font-extrabold text-brand-navy tracking-tight leading-tight mb-4">FY 2026–27<br>Compliance Calendar</h1>
+      <p class="text-slate-500 font-medium leading-relaxed">India's practical date-wise calendar for recurring tax, GST, TDS/TCS, PF, ESI and selected corporate compliances.</p>
+  </div>
+  <div class="mt-6 border-l-4 border-brand-red p-4 bg-white rounded-r-2xl shadow-sm text-xs text-slate-600 flex items-start gap-3">
+   <i data-lucide="alert-circle" class="w-4 h-4 text-brand-red shrink-0 mt-0.5"></i>
+   <div><strong class="text-slate-800">Important:</strong> Due dates can be changed, extended or made subject to specific taxpayer conditions by Government notifications. Always verify the latest portal notification before filing.</div>
+  </div>
+ </div>
+</section>
+
+<!-- CONTROLS TOOLBAR -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-8">
+ <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-wrap gap-3 items-center justify-between">
+  <div class="relative flex-1 min-w-[260px]">
+   <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+   <input id="search" class="w-full text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-brand-navy transition-all" placeholder="Search compliance, form, authority or description…">
+  </div>
+  <div class="flex flex-wrap gap-1.5" id="filter-buttons">
+   <button class="btn active px-3.5 py-2 rounded-xl text-xs font-bold bg-brand-red text-white transition-all shadow-sm" data-filter="All">All</button>
+   <button class="btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-filter="GST">GST</button>
+   <button class="btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-filter="Income Tax">Income Tax</button>
+   <button class="btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-filter="TDS/TCS">TDS/TCS</button>
+   <button class="btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-filter="PF/ESI">PF/ESI</button>
+   <button class="btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-filter="MCA">MCA</button>
+   <button class="btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all" data-filter="Other">Other</button>
+  </div>
+ </div>
+</div>
+
+<main id="calendar" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-8 space-y-6"></main>
+<div id="empty" class="hidden p-12 text-center text-slate-400 font-medium bg-white rounded-2xl max-w-7xl mx-auto mb-12 border border-slate-200">No matching compliances found.</div>
+
+<!-- FOOTER -->
+<footer class="bg-brand-navy text-slate-300 py-10 mt-auto border-t border-slate-800">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center flex-wrap gap-4 text-xs">
+  <div><strong class="text-white text-sm">CM FILINGS</strong><br><span class="text-slate-400">Experts in Tax | Compliance | Technology</span></div>
+  <div><span class="text-slate-400">FY 2026–27 • 01 April 2026 – 31 March 2027</span></div>
+ </div>
+</footer>
+
+<!-- MODAL POPUP -->
+<div id="modal" class="fixed inset-0 bg-brand-navy/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+ <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
+  <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+      <h3 id="mTitle" class="text-base font-extrabold text-brand-navy"></h3>
+      <button class="w-8 h-8 rounded-full bg-slate-200/60 flex items-center justify-center text-slate-500 hover:text-brand-red transition-colors" onclick="closeModal()">✕</button>
+  </div>
+  <div class="p-6 space-y-4">
+   <p id="mDesc" class="text-xs text-slate-600 leading-relaxed"></p>
+   <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 text-xs">
+    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Due Date</span><span id="mDate" class="font-mono font-bold text-slate-800"></span></div>
+    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category</span><span id="mCat" class="font-bold text-brand-navy"></span></div>
+    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Form / Return</span><span id="mForm" class="font-mono font-semibold text-slate-700"></span></div>
+    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Authority</span><span id="mAuth" class="font-semibold text-slate-700"></span></div>
+   </div>
+  </div>
+ </div>
+</div>
+
+<script>
+const E=[];
+const add=(date,name,cat,desc,form="",auth="")=>E.push({date,name,cat,desc,form,auth});
+
+/* MONTHLY RECURRING COMPLIANCES — FY 2026-27 */
+const months=[
+ ["2026-04","April 2026"],["2026-05","May 2026"],["2026-06","June 2026"],
+ ["2026-07","July 2026"],["2026-08","August 2026"],["2026-09","September 2026"],
+ ["2026-10","October 2026"],["2026-11","November 2026"],["2026-12","December 2026"],
+ ["2027-01","January 2027"],["2027-02","February 2027"],["2027-03","March 2027"]
+];
+const pad=n=>String(n).padStart(2,"0");
+
+/* GST monthly: standard dates; QRMP taxpayers follow quarterly schedule */
+months.forEach(([ym,label])=>{
+ const [y,m]=ym.split("-").map(Number);
+ let nextM=m+1,nextY=y;if(nextM===13){nextM=1;nextY++}
+ add(`${y}-${pad(m)}-11`,"GSTR-1 – Monthly","GST",`Monthly outward supplies return for ${label}. Standard monthly due date is 11th; special notifications/QRMP rules may differ.`,"GSTR-1","GST Portal");
+ add(`${y}-${pad(m)}-20`,"GSTR-3B – Monthly","GST",`Monthly summary return and tax payment for ${label}. Standard monthly due date is 20th; special notifications/QRMP rules may differ.`,"GSTR-3B","GST Portal");
+ /* PF / ESI */
+ add(`${nextY}-${pad(nextM)}-15`,`EPF ECR & Contribution – ${label}`,"PF/ESI",`Deposit EPF contribution and file ECR for wages of ${label}.`,"ECR","EPFO");
+ add(`${nextY}-${pad(nextM)}-15`,`ESI Contribution – ${label}`,"PF/ESI",`Deposit ESI contribution for wages of ${label}.`,"ESI Contribution","ESIC");
+ /* TDS payment */
+ add(`${nextY}-${pad(nextM)}-07`,`TDS Deposit – ${label}`,"TDS/TCS",`Deposit tax deducted during ${label}, subject to applicable statutory rules and exceptions.`,"Challan / TDS","Income Tax Department");
+});
+
+/* TDS QUARTERLY STATEMENTS */
+add("2026-05-31","TDS Statement – Q4 FY 2025-26","TDS/TCS","Quarterly TDS statement for January–March 2026, under the applicable transition/forms.","Quarterly TDS Statement","Income Tax Department");
+add("2026-07-31","TDS Statement – Q1 FY 2026-27","TDS/TCS","Quarterly TDS statement for April–June 2026.","Applicable quarterly TDS form","Income Tax Department");
+add("2026-10-31","TDS Statement – Q2 FY 2026-27","TDS/TCS","Quarterly TDS statement for July–September 2026.","Applicable quarterly TDS form","Income Tax Department");
+add("2027-01-31","TDS Statement – Q3 FY 2026-27","TDS/TCS","Quarterly TDS statement for October–December 2026.","Applicable quarterly TDS form","Income Tax Department");
+add("2027-05-31","TDS Statement – Q4 FY 2026-27","TDS/TCS","Quarterly TDS statement for January–March 2027; outside FY 2026-27 but included for continuity.","Applicable quarterly TDS form","Income Tax Department");
+
+/* ADVANCE TAX */
+add("2026-06-15","Advance Tax – Q1","Income Tax","First instalment of advance tax; generally 15% of annual liability for non-presumptive taxpayers.","Advance Tax","Income Tax Department");
+add("2026-09-15","Advance Tax – Q2","Income Tax","Second instalment; cumulative advance tax generally reaches 45%.","Advance Tax","Income Tax Department");
+add("2026-12-15","Advance Tax – Q3","Income Tax","Third instalment; cumulative advance tax generally reaches 75%.","Advance Tax","Income Tax Department");
+add("2027-03-15","Advance Tax – Q4","Income Tax","Final instalment; cumulative advance tax generally reaches 100%. Eligible presumptive taxpayers generally pay the full amount by this date.","Advance Tax","Income Tax Department");
+
+/* AY 2026-27 CARRY-FORWARD ITEMS — old Act period */
+add("2026-07-31","ITR – Non-audit taxpayers (AY 2026-27)","Income Tax","Return filing deadline for taxpayers whose return is not subject to the audit due-date category, subject to the notified due date for the applicable taxpayer.","ITR","Income Tax Department");
+add("2026-09-30","Tax Audit Report – AY 2026-27","Income Tax","Indicative statutory audit-report deadline for applicable taxpayers; verify the notified due date and extensions.","Form 3CA/3CB/3CD","Income Tax Department");
+add("2026-10-31","ITR – Audit cases (AY 2026-27)","Income Tax","Indicative return deadline for applicable audit cases; verify the notified due date and extensions.","ITR","Income Tax Department");
+add("2026-11-30","Transfer Pricing Report – AY 2026-27","Income Tax","Indicative deadline for applicable international/specified domestic transaction cases; verify current notification.","Form 3CEB","Income Tax Department");
+
+/* GST ANNUAL – FY 2025-26 */
+add("2026-12-31","GSTR-9 – FY 2025-26","GST","Annual GST return for FY 2025-26, where applicable; statutory due date is generally 31 December following the financial year, subject to exemptions/extensions.","GSTR-9","GST Portal");
+add("2026-12-31","GSTR-9C – FY 2025-26","GST","GST reconciliation statement for taxpayers for whom GSTR-9C is applicable, subject to threshold and current rules.","GSTR-9C","GST Portal");
+
+/* COMPANY / MCA — date depends on AGM, so show as relative compliance */
+add("2026-09-30","Company AGM – Standard Timeline","MCA","Annual General Meeting for companies following the normal six-month-from-FY-end timeline. Specific first-AGM and extension rules can apply.","AGM","MCA");
+add("2026-10-30","AOC-4 – Typical 30-day AGM filing window","MCA","Financial statements are generally filed within 30 days of the AGM. The actual date depends on the AGM date.","AOC-4","MCA");
+add("2026-11-29","MGT-7 / MGT-7A – Typical 60-day AGM filing window","MCA","Annual return is generally filed within 60 days of the AGM. The actual date depends on the AGM date.","MGT-7 / MGT-7A","MCA");
+
+/* OTHER recurring / annual practical reminders */
+add("2026-04-01","Start of FY 2026-27","Other","New financial year begins. Review registrations, DSCs, licences, recurring compliances, accounting masters and client compliance schedules.","Internal Checklist","CM Filings");
+add("2027-03-31","Year-end closing – FY 2026-27","Other","Financial year closes. Complete books, reconciliations, fixed-asset records, GST reconciliation, TDS reconciliation and year-end documentation.","Year-end Checklist","CM Filings");
+
+/* Sort */
+E.sort((a,b)=>a.date.localeCompare(b.date));
+
+let active="All", query="";
+const monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const dayNames=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function filtered(){
+ return E.filter(e=>{
+  const q=query.toLowerCase();
+  const text=(e.name+" "+e.cat+" "+e.desc+" "+e.form+" "+e.auth).toLowerCase();
+  return (active==="All"||e.cat===active) && (!q||text.includes(q));
+ });
+}
+function render(){
+ const list=filtered(), byDate={};
+ list.forEach(e=>(byDate[e.date]??=[]).push(e));
+ const cal=document.getElementById("calendar");cal.innerHTML="";
+ let visible=0;
+ months.forEach(([ym,label])=>{
+  const [y,m]=ym.split("-").map(Number);
+  const first=new Date(y,m-1,1), last=new Date(y,m,0);
+  const sec=document.createElement("section");
+  sec.className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm";
+  const evCount=list.filter(e=>e.date.startsWith(ym)).length;
+  sec.innerHTML=`<div class="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
+    <h2 class="text-base font-extrabold text-brand-navy">${label}</h2>
+    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">${evCount} compliance item${evCount!==1?"s":""}</span>
+  </div>`;
+  const grid=document.createElement("div");
+  grid.className="grid grid-cols-7 border-collapse bg-slate-100 gap-px";
+  dayNames.forEach(d=>{
+      const x=document.createElement("div");
+      x.className="bg-slate-50 text-slate-400 font-extrabold text-[10px] tracking-wider uppercase p-2.5 text-center";
+      x.textContent=d;
+      grid.appendChild(x);
+  });
+  for(let i=0;i<first.getDay();i++){
+      const x=document.createElement("div");
+      x.className="bg-slate-50/40 min-h-[110px]";
+      grid.appendChild(x);
+  }
+  for(let d=1;d<=last.getDate();d++){
+   const date=`${y}-${pad(m)}-${pad(d)}`, x=document.createElement("div");
+   x.className="bg-white min-h-[110px] p-2 flex flex-col gap-1 transition-colors";
+   const today=new Date();
+   const isToday = (today.toISOString().slice(0,10)===date);
+   
+   x.innerHTML=`<div class="font-extrabold text-xs mb-1 ${isToday ? 'w-6 h-6 bg-brand-red text-white rounded-full flex items-center justify-center' : 'text-slate-600'}">${d}</div>`;
+   
+   (byDate[date]||[]).forEach(e=>{
+    visible++;
+    const b=document.createElement("button");
+    b.className="text-left w-full border-l-2 border-brand-red bg-brand-redlight/50 hover:bg-brand-redlight p-1.5 rounded-r-lg transition-all cursor-pointer group";
+    b.type="button";
+    b.innerHTML=`<div class="font-extrabold text-[10px] text-slate-800 leading-tight">${e.name}</div><div class="text-[9px] text-slate-400 mt-0.5 font-medium">${e.cat}</div>`;
+    b.onclick=()=>openModal(e);
+    x.appendChild(b);
+   });
+   grid.appendChild(x);
+  }
+  while(grid.children.length%7!==0){
+      const x=document.createElement("div");
+      x.className="bg-slate-50/40 min-h-[110px]";
+      grid.appendChild(x);
+  }
+  sec.appendChild(grid);
+  cal.appendChild(sec);
+ });
+ document.getElementById("empty").style.display=visible?"none":"block";
+ lucide.createIcons();
+}
+function openModal(e){
+ document.getElementById("mTitle").textContent=e.name;
+ document.getElementById("mDesc").textContent=e.desc;
+ const d=new Date(e.date+"T00:00:00");
+ document.getElementById("mDate").textContent=d.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"});
+ document.getElementById("mCat").textContent=e.cat;
+ document.getElementById("mForm").textContent=e.form||"—";
+ document.getElementById("mAuth").textContent=e.auth||"—";
+ document.getElementById("modal").classList.remove("hidden");
+ document.getElementById("modal").classList.add("flex");
+}
+function closeModal(){
+    document.getElementById("modal").classList.remove("flex");
+    document.getElementById("modal").classList.add("hidden");
+}
+document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal()});
+document.getElementById("search").addEventListener("input",e=>{query=e.target.value;render()});
+
+document.querySelectorAll("#filter-buttons .btn").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("#filter-buttons .btn").forEach(x=>{
+     x.classList.remove("bg-brand-red", "text-white");
+     x.classList.add("bg-slate-100", "text-slate-600");
+ });
+ b.classList.remove("bg-slate-100", "text-slate-600");
+ b.classList.add("bg-brand-red", "text-white");
+ active=b.dataset.filter;
+ render();
+}));
+
+render();
+lucide.createIcons();
+</script>
+</body>
+</html>

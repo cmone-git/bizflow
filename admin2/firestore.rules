@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Role is stored in:
+    // users/{Firebase Authentication UID}
+    // {
+    //   email: "user@example.com",
+    //   role: "admin"
+    // }
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // USER / ROLE DIRECTORY
+    // A signed-in user may read their own profile.
+    // Only an admin may modify role records.
+    match /users/{userId} {
+      allow read: if signedIn() &&
+        (request.auth.uid == userId || isAdmin());
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // PROFORMA INVOICES
+    // Public read is retained for client invoice links.
+    // Only admins can create/update/delete.
+    match /proformaInvoice/{invoiceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // CLIENTS
+    match /clients/{clientId} {
+      allow read, write: if isAdmin();
+    }
+
+    // CREDENTIALS
+    match /credentials/{credId} {
+      allow read, write: if isAdmin();
+    }
+
+    // COMPLIANCE
+    // Your current application uses the plural collection "compliances".
+    match /compliances/{compId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Keep compatibility with the older singular collection if it exists.
+    match /compliance/{compId} {
+      allow read, write: if isAdmin();
+    }
+
+    // TRANSACTIONS
+    match /transactions/{txId} {
+      allow read, write: if isAdmin();
+    }
+
+    // SETTINGS
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // COMPANY / OTHER ADMIN COLLECTIONS
+    match /companies/{companyId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /branches/{branchId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Everything else is private to admins.
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
