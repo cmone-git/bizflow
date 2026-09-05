@@ -101,7 +101,14 @@
 <div class="notes-modal-overlay" id="notesModal"><div class="notes-modal-content"><div class="notes-modal-header no-print"><h3 style="margin:0;color:var(--primary)">Patient Notes & Diagnosis</h3><button class="btn-outline" onclick="document.getElementById('notesModal').style.display='none'" style="padding:4px 8px;border:none"><span class="material-symbols-rounded">close</span></button></div><div id="printNotesArea"><h4 id="modalPatientName" style="margin-bottom:4px;font-size:18px">---</h4><p style="font-size:12px;color:var(--text-muted);margin-bottom:16px" id="modalPatientMeta">---</p><div style="background:#FAFAFA;border:1px solid var(--border);padding:16px;border-radius:8px;font-size:14px;line-height:1.6;white-space:pre-wrap;min-height:150px" id="modalPatientNotesText"></div></div><div class="no-print" style="margin-top:20px;text-align:right"><button class="btn-primary" onclick="window.printModalNotes()"><span class="material-symbols-rounded">print</span>Print Notes</button></div></div></div>
 
 <div class="table-container"><div class="table-header">
-<div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:12px"><h4 style="margin:0">Schedule Directory</h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-outline no-print" onclick="window.executeBulkDelete()" style="border-color:var(--danger);color:var(--danger);padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px">delete</span>Bulk Delete</button><button class="btn-outline no-print" onclick="window.openBulkReschedule()" style="border-color:var(--primary);color:var(--primary);padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px">event_repeat</span>Move to Next Schedule</button><button class="btn-outline no-print" onclick="window.exportAptPDF()" style="padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px;color:var(--primary)">picture_as_pdf</span>Export</button></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:12px"><h4 style="margin:0">Schedule Directory</h4><div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn-outline no-print" onclick="window.executeBulkDelete()" style="border-color:var(--danger);color:var(--danger);padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px">delete</span>Bulk Delete</button>
+<button class="btn-outline no-print" onclick="window.openBulkReschedule()" style="border-color:var(--primary);color:var(--primary);padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px">event_repeat</span>Move to Next Schedule</button>
+<button class="btn-outline no-print" onclick="window.exportAptPDF()" style="padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px;color:var(--primary)">picture_as_pdf</span>Export</button>
+<button class="btn-outline no-print" onclick="window.downloadAppointmentSampleCSV()" style="padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px">download</span>Sample CSV</button>
+<button class="btn-outline no-print" onclick="document.getElementById('aptCsvInput').click()" style="padding:6px 12px;font-size:12px"><span class="material-symbols-rounded" style="font-size:14px">upload_file</span>Upload CSV</button>
+<input id="aptCsvInput" type="file" accept=".csv,text/csv" class="no-print" style="display:none" onchange="window.importAppointmentsCSV(this.files[0])">
+</div></div>
 <div class="no-print" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#FAFAFA;padding:12px;border-radius:8px;border:1px solid var(--border);width:100%">
 <div style="display:flex;align-items:center;gap:6px"><input type="date" id="filterDateFrom" class="form-input" onchange="window.filterTable()" style="padding:8px;font-size:12px;width:auto"><span style="font-size:12px;color:var(--text-muted)">to</span><input type="date" id="filterDateTo" class="form-input" onchange="window.filterTable()" style="padding:8px;font-size:12px;width:auto"><button class="btn-outline" onclick="window.setFilterToday()" style="padding:8px 12px;font-size:12px">Today</button></div>
 <select id="filterStatus" class="form-input" onchange="window.filterTable()" style="padding:8px;font-size:12px;width:auto"><option value="">All Statuses</option><option value="pending">Pending</option><option value="reported">Reported</option><option value="completed">Completed</option><option value="rescheduled">Rescheduled</option><option value="cancelled">Cancelled</option></select>
@@ -116,7 +123,7 @@
 <script type="module">
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 window.deleteDoc=deleteDoc;window.doc=doc;window.appointmentsDataCache={};window.allBranchesString="";window.allPatientsCache={};
 
@@ -148,7 +155,7 @@ window.handlePatientSelect=async()=>{let raw=document.getElementById('aptPatient
 
 window.resetAptForm=()=>{document.getElementById('add-appointment-form').reset();document.getElementById('aptDocId').value='';document.getElementById('aptPatientSearch').value='';document.getElementById('saveAptBtn').innerText='Save Appointment';document.getElementById('reschedule-container').classList.remove('active');document.getElementById('aptPrevDues').value='';document.getElementById('aptCategory').value='Normal';setMinBookingDate();if(window.currentUser&&window.currentUser.role!=='admin')document.getElementById('aptBranch').value=window.currentUser.branch};
 
-window.loadAppointments=async()=>{const tb=document.getElementById('aptTableBody');tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px">Loading appointments...</td></tr>';try{let q=window.currentUser&&window.currentUser.role!=='admin'?query(collection(db,'appointments'),where('branch','==',window.currentUser.branch)):query(collection(db,'appointments'));const snap=await getDocs(q);tb.innerHTML='';window.appointmentsDataCache={};if(snap.empty){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">No appointments found.</td></tr>';return}let list=[];snap.forEach(d=>list.push({id:d.id,data:d.data()}));list.sort((a,b)=>new Date(b.data.date||0)-new Date(a.data.date||0)||String(a.data.branch||'').localeCompare(String(b.data.branch||'')));let groups={};list.forEach(x=>{let k=x.data.therapist||'Unassigned Doctor';(groups[k]||(groups[k]=[])).push(x)});Object.keys(groups).sort().forEach(th=>{const hr=document.createElement('tr');hr.className='therapist-group-header';hr.innerHTML=`<td colspan="7" style="background:#f5fbf0;padding:12px 20px;border-bottom:2px solid #66A31A;border-top:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded" style="color:#155A90">medical_services</span><strong style="font-size:15px;color:#155A90;text-transform:uppercase">Dr. ${esc(th)}</strong></div></td>`;tb.appendChild(hr);groups[th].forEach(item=>{const d=item.data,id=item.id;window.appointmentsDataCache[id]=d;const st=(d.status||'Pending'),map={Completed:'completed',Reported:'reported',Rescheduled:'rescheduled',Cancelled:'cancelled',Pending:'pending'};const ind=window.formatIndianDate(d.date),wa=encodeURIComponent(`Hello ${d.name}, your appointment at THERA CARE (${d.branch}) is booked for ${ind}.`),loc=d.location?`<a href="${esc(d.location.startsWith('http')?d.location:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.location))}" class="cta-link" target="_blank"><span class="material-symbols-rounded" style="font-size:16px;color:#3B82F6">map</span></a>`:'';const tr=document.createElement('tr');tr.className='apt-row';tr.dataset.branch=(d.branch||'').toLowerCase();tr.dataset.status=st.toLowerCase();tr.dataset.category=(d.category||'').toLowerCase();tr.dataset.date=d.date||'';tr.dataset.balance=d.balance||0;tr.dataset.search=`${d.name||''} ${d.mobile||''} ${d.therapist||''} ${ind}`.toLowerCase();tr.innerHTML=`<td class="no-print"><input type="checkbox" class="apt-checkbox" value="${id}" style="transform:scale(1.2)"></td><td><strong>${ind}</strong><br><span style="font-size:12px;color:var(--text-muted)">${esc(d.time||'')}</span>${d.previousDate?`<br><span style="font-size:11px;color:#64748B">Prev: ${window.formatIndianDate(d.previousDate)} ${esc(d.previousTime||'')}</span>`:''}</td><td><span style="font-weight:700;font-size:15px">${esc(d.name)}</span> <span style="font-size:11px;color:var(--text-muted)">(${esc(d.age||'--')} Yrs${d.gender?' • '+esc(d.gender):''})</span><br><span style="font-size:13px;color:var(--text-muted)">${esc(d.mobile)}</span><br><span class="badge badge-category">${esc(d.category||'Normal')}</span><div class="no-print" style="display:flex;gap:8px;margin-top:6px"><a href="tel:${esc(d.mobile)}" class="cta-link"><span class="material-symbols-rounded" style="font-size:16px">call</span></a><a href="https://wa.me/91${esc(d.mobile)}?text=${wa}" class="cta-link" target="_blank"><span class="material-symbols-rounded" style="font-size:16px;color:var(--success)">chat</span></a>${loc}</div></td><td><strong>${esc(d.branch)}</strong><br><span style="font-size:12px;color:var(--text-muted)">${esc(d.therapist||'')}</span></td><td><strong>${esc(d.duration||'--')}</strong><br><span style="font-size:12px;color:var(--text-muted)">Sessions/Day: ${esc(d.sessionsPerDay||'--')}</span><br><span style="font-size:12px;color:var(--success)">Fee: ₹${money(d.fee)} | Adv: ₹${money(d.advance)}</span><br><strong style="color:var(--danger);font-size:12px">Bal: ₹${money(d.balance)}</strong></td><td><span class="badge badge-${map[st]||'pending'}">${esc(st)}</span>${d.notes?`<div style="margin-top:6px;font-size:11px;color:var(--secondary);background:#FAFAFA;padding:4px;border-radius:4px;line-height:1.4;max-width:230px;white-space:normal">${esc(d.notes)}</div>`:''}</td><td class="no-print" style="text-align:right"><div style="display:flex;gap:10px;justify-content:flex-end"><span class="material-symbols-rounded" style="color:#8B5CF6;cursor:pointer" title="View Notes" onclick="window.viewNotes('${id}')">sticky_note_2</span><span class="material-symbols-rounded" style="color:#155A90;cursor:pointer;font-size:22px" title="Print Report" onclick="window.printInvoice('${id}')">description</span><span class="material-symbols-rounded" style="color:var(--text-muted);cursor:pointer" title="Edit" onclick="window.editAppointment('${id}')">edit</span></div></td>`;tb.appendChild(tr)})})}catch(e){console.error(e);tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--danger)">Error loading data. Check Firestore rules.</td></tr>'}};
+window.loadAppointments=async()=>{const tb=document.getElementById('aptTableBody');tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px">Loading appointments...</td></tr>';try{let q=window.currentUser&&window.currentUser.role!=='admin'?query(collection(db,'appointments'),where('branch','==',window.currentUser.branch)):query(collection(db,'appointments'));const snap=await getDocs(q);tb.innerHTML='';window.appointmentsDataCache={};if(snap.empty){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">No appointments found.</td></tr>';return}let list=[];snap.forEach(d=>list.push({id:d.id,data:d.data()}));list.sort((a,b)=>new Date(b.data.date||0)-new Date(a.data.date||0)||String(a.data.branch||'').localeCompare(String(b.data.branch||'')));let groups={};list.forEach(x=>{let k=x.data.therapist||'Unassigned Doctor';(groups[k]||(groups[k]=[])).push(x)});Object.keys(groups).sort().forEach(th=>{const hr=document.createElement('tr');hr.className='therapist-group-header';hr.innerHTML=`<td colspan="7" style="background:#f5fbf0;padding:12px 20px;border-bottom:2px solid #66A31A;border-top:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded" style="color:#155A90">medical_services</span><strong style="font-size:15px;color:#155A90;text-transform:uppercase">Dr. ${esc(th)}</strong></div></td>`;tb.appendChild(hr);groups[th].forEach(item=>{const d=item.data,id=item.id;window.appointmentsDataCache[id]=d;const st=(d.status||'Pending'),map={Completed:'completed',Reported:'reported',Rescheduled:'rescheduled',Cancelled:'cancelled',Pending:'pending'};const ind=window.formatIndianDate(d.date),wa=encodeURIComponent(`Hello ${d.name}, your appointment at THERA CARE (${d.branch}) is booked for ${ind}.`),loc=d.location?`<a href="${esc(d.location.startsWith('http')?d.location:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.location))}" class="cta-link" target="_blank"><span class="material-symbols-rounded" style="font-size:16px;color:#3B82F6">map</span></a>`:'';const tr=document.createElement('tr');tr.className='apt-row';tr.dataset.branch=(d.branch||'').toLowerCase();tr.dataset.status=st.toLowerCase();tr.dataset.category=(d.category||'').toLowerCase();tr.dataset.date=d.date||'';tr.dataset.balance=d.balance||0;tr.dataset.search=`${d.name||''} ${d.mobile||''} ${d.therapist||''} ${ind}`.toLowerCase();tr.innerHTML=`<td class="no-print"><input type="checkbox" class="apt-checkbox" value="${id}" style="transform:scale(1.2)"></td><td><strong>${ind}</strong><br><span style="font-size:12px;color:var(--text-muted)">${esc(d.time||'')}</span>${d.previousDate?`<br><span style="font-size:11px;color:#64748B">Prev: ${window.formatIndianDate(d.previousDate)} ${esc(d.previousTime||'')}</span>`:''}</td><td><span style="font-weight:700;font-size:15px">${esc(d.name)}</span> <span style="font-size:11px;color:var(--text-muted)">(${esc(d.age||'--')} Yrs${d.gender?' • '+esc(d.gender):''})</span><br><span style="font-size:13px;color:var(--text-muted)">${esc(d.mobile)}</span><br><span class="badge badge-category">${esc(d.category||'Normal')}</span><div class="no-print" style="display:flex;gap:8px;margin-top:6px"><a href="tel:${esc(d.mobile)}" class="cta-link"><span class="material-symbols-rounded" style="font-size:16px">call</span></a><a href="https://wa.me/91${esc(d.mobile)}?text=${wa}" class="cta-link" target="_blank"><span class="material-symbols-rounded" style="font-size:16px;color:var(--success)">chat</span></a>${loc}</div></td><td><strong>${esc(d.branch)}</strong><br><span style="font-size:12px;color:var(--text-muted)">${esc(d.therapist||'')}</span></td><td><strong>${esc(d.duration||'--')}</strong><br><span style="font-size:12px;color:var(--text-muted)">Sessions/Day: ${esc(d.sessionsPerDay||'--')}</span><br><span style="font-size:12px;color:var(--success)">Fee: ₹${money(d.fee)} | Adv: ₹${money(d.advance)}</span><br><strong style="color:var(--danger);font-size:12px">Bal: ₹${money(d.balance)}</strong></td><td><span class="badge badge-${map[st]||'pending'}">${esc(st)}</span>${d.notes?`<div style="margin-top:6px;font-size:11px;color:var(--secondary);background:#FAFAFA;padding:4px;border-radius:4px;line-height:1.4;max-width:230px;white-space:normal">${esc(d.notes)}</div>`:''}</td><td class="no-print" style="text-align:right"><div style="display:flex;gap:10px;justify-content:flex-end"><span class="material-symbols-rounded" style="color:#8B5CF6;cursor:pointer" title="View Notes" onclick="window.viewNotes('${id}')">sticky_note_2</span><span class="material-symbols-rounded" style="color:#155A90;cursor:pointer;font-size:22px" title="Diagnosis Report cum Invoice" onclick="window.printInvoice('${id}')">description</span><span class="material-symbols-rounded" style="color:var(--text-muted);cursor:pointer" title="Edit" onclick="window.editAppointment('${id}')">edit</span></div></td>`;tb.appendChild(tr)})})}catch(e){console.error(e);tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--danger)">Error loading data. Check Firestore rules.</td></tr>'}};
 
 window.setFilterToday=()=>{const d=new Date(),s=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;document.getElementById('filterDateFrom').value=s;document.getElementById('filterDateTo').value=s;window.filterTable()};
 window.filterTable=()=>{const b=document.getElementById('filterBranch').value.toLowerCase(),s=document.getElementById('filterStatus').value.toLowerCase(),c=document.getElementById('filterCategory').value.toLowerCase(),p=document.getElementById('filterPayment').value,fr=document.getElementById('filterDateFrom').value,to=document.getElementById('filterDateTo').value,t=document.getElementById('aptSearchInput').value.toLowerCase(),rows=[...document.getElementById('aptTableBody').rows];let head=null,n=0;for(const r of rows){if(r.classList.contains('therapist-group-header')){if(head&&n===0)head.style.display='none';head=r;n=0;r.style.display='';continue}if(r.cells.length===1)continue;const bal=parseFloat(r.dataset.balance)||0;let show=(!b||r.dataset.branch===b)&&(!s||r.dataset.status===s)&&(!c||r.dataset.category===c)&&(!fr||r.dataset.date>=fr)&&(!to||r.dataset.date<=to)&&(!t||r.dataset.search.includes(t))&&!(p==='pending'&&bal<=0)&&!(p==='paid'&&bal>0);r.style.display=show?'':'none';if(show)n++}if(head&&n===0)head.style.display='none'};
@@ -167,18 +174,186 @@ window.syncTransactions=async(aptId,payload)=>{let q=query(collection(db,'transa
 
 window.saveAppointment=async()=>{const btn=document.getElementById('saveAptBtn'),id=document.getElementById('aptDocId').value,get=id=>document.getElementById(id).value.trim(),fee=parseFloat(get('aptFee'))||0,advance=parseFloat(get('aptAdvance'))||0,prev=parseFloat(get('aptPrevDues'))||0;let status=get('aptStatus'),date=get('aptDate'),notes=get('aptNotes'),res=get('aptRescheduleDate');const req=['aptMobile','aptName','aptBranch','aptDate','aptTime','aptTherapist','aptCategory'];if(req.some(x=>!get(x)))return alert('Please fill all required (*) fields!');if(!id&&isPastDateTime(date,get('aptTime')))return alert('You cannot book a new appointment in the past!');if(status==='Rescheduled'){if(!res)return alert('Please pick a new reschedule date.');if(isPastDateTime(res,get('aptTime')))return alert('You cannot reschedule to a past date!');notes=notes.replace(/\[Moved from: .*?\]/g,'').trim()+(notes.trim()?'\n':'')+`[Moved from: ${window.formatIndianDate(date)}]`;date=res}const payload={mobile:get('aptMobile'),name:get('aptName'),age:get('aptAge'),gender:get('aptGender'),category:get('aptCategory'),location:get('aptLocation'),patientNotes:get('aptPatientNotes'),branch:get('aptBranch'),date,time:get('aptTime'),previousDate:get('aptPreviousDate'),previousTime:get('aptPreviousTime'),duration:get('aptDuration'),sessionsPerDay:get('aptSessionsPerDay'),therapist:get('aptTherapist'),status,fee,advance,balance:fee-advance,prevDues:prev,notes,paymentMode:get('aptPaymentMode'),paymentReference:get('aptPaymentReference'),paymentRemarks:get('aptPaymentRemarks'),updatedAt:new Date()};btn.innerText='Saving...';btn.disabled=true;try{let q=query(collection(db,'patients'),where('mobile','==',payload.mobile));if(window.currentUser&&window.currentUser.role!=='admin')q=query(collection(db,'patients'),where('mobile','==',payload.mobile),where('branch','==',window.currentUser.branch));const ps=await getDocs(q);const pdata={mobile:payload.mobile,name:payload.name,age:payload.age,gender:payload.gender,category:payload.category,location:payload.location,notes:payload.patientNotes,branch:payload.branch};if(ps.empty)await addDoc(collection(db,'patients'),{patientId:'P'+Math.floor(Math.random()*90000+10000),...pdata,createdAt:new Date()});else await updateDoc(doc(db,'patients',ps.docs[0].id),pdata);if(id){await updateDoc(doc(db,'appointments',id),payload);await window.syncTransactions(id,payload);alert('Appointment updated successfully!')}else{payload.createdAt=new Date();const n=await addDoc(collection(db,'appointments'),payload);await window.syncTransactions(n.id,payload);alert('New appointment saved successfully!')}window.resetAptForm();window.loadAppointments()}catch(e){console.error(e);alert('Failed to save appointment. Check your database permissions.')}btn.innerText='Save Appointment';btn.disabled=false};
 
-window.printInvoice=id=>{
- const d=typeof id==='string'?window.appointmentsDataCache[id]:null;if(!d)return alert('Appointment data not found.');
- const fee=parseFloat(d.fee)||0,advance=parseFloat(d.advance)||0,prev=parseFloat(d.prevDues)||0,net=fee+prev-advance;
- const base=new URL('./',window.location.href),logoUrl=new URL('assets/logo.png',base).href,nameUrl=new URL('assets/name.png',base).href;
- const fallbackLogo=`<div class="fallback-logo"><div class="cross">+</div><div><div class="brand">THERA CARE</div><div class="tag">Rebuild Your Health</div></div></div>`;
- const diagnosis=esc(d.notes||'No diagnosis report recorded.');
- const branches=esc(window.allBranchesString||'MAHE | CHOKLI | PALLIKUNI | PANOOR | ARAYAKOOL | KUTHUPARAMBA | KOTTAYAMPOIL');
- const w=window.open('','_blank');
- w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Therapy Report - ${esc(d.name)}</title><style>
- *{box-sizing:border-box}body{margin:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#3f4248}.report{width:210mm;min-height:297mm;margin:auto;padding:16mm 14mm 12mm;position:relative;overflow:hidden}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.brand-left{display:flex;align-items:center;gap:10px;min-width:45%}.brand-left img.logo{width:110px;height:auto;object-fit:contain}.brand-left img.name{max-width:220px;max-height:60px;object-fit:contain}.fallback-logo{display:flex;align-items:center;gap:12px}.cross{width:58px;height:58px;border:5px solid #66A31A;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#155A90;font-size:50px;font-weight:700;line-height:1}.brand{font-size:23px;font-weight:800;color:#66A31A;letter-spacing:.5px}.tag{font-size:12px;color:#155A90;font-weight:700;letter-spacing:1px;margin-top:4px}.clinic{text-align:right;line-height:1.35}.clinic .title{font-size:18px;font-weight:800;color:#223f68;letter-spacing:1px}.clinic .sub{font-size:14px;font-weight:700;color:#333}.clinic .addr,.clinic .phone{font-size:12px;color:#555}.line{height:3px;background:linear-gradient(90deg,#66A31A 0%,#66A31A 68%,#155A90 68%,#155A90 100%);margin:14px 0 12px}.report-title{text-align:center;font-size:18px;font-weight:800;letter-spacing:1px;color:#155A90;margin:4px 0 12px}.patient-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 50px;font-size:13px;position:relative;z-index:2}.field{display:flex;gap:8px;min-height:20px}.label{font-weight:700;color:#444;white-space:nowrap}.value{font-weight:500;color:#111;border-bottom:1px dotted #bbb;flex:1;min-width:0;padding-bottom:2px}.watermark{position:absolute;left:50%;top:39%;transform:translate(-50%,-50%);font-size:300px;color:rgba(102,163,26,.035);font-weight:800;z-index:0;line-height:1}.content{position:relative;z-index:2;margin-top:24px}.section{margin-top:14px}.section h3{font-size:13px;color:#155A90;text-transform:uppercase;letter-spacing:.6px;margin:0 0 7px;border-left:4px solid #66A31A;padding-left:8px}.box{border:1px solid #d9d9d9;border-radius:5px;padding:10px 12px;min-height:58px;font-size:13px;line-height:1.55;white-space:pre-wrap}.therapy-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.mini{border:1px solid #e0e0e0;padding:9px;border-radius:5px;background:#fcfcfc}.mini .ml{font-size:10px;text-transform:uppercase;color:#777;font-weight:700}.mini .mv{font-size:13px;color:#222;font-weight:700;margin-top:3px}.payment{margin-top:16px;width:100%;border-collapse:collapse;font-size:13px}.payment th{background:#f3f8ee;color:#155A90;text-align:left;padding:9px;border-bottom:2px solid #66A31A;font-size:11px;text-transform:uppercase}.payment td{padding:8px;border-bottom:1px solid #e4e4e4}.payment td:last-child{text-align:right}.balance{font-weight:800;color:#155A90}.signature{margin-top:30px;display:flex;justify-content:flex-end}.signature-box{text-align:center;width:210px;border-top:1px solid #777;padding-top:6px;font-size:11px;color:#555}.footer{position:absolute;left:14mm;right:14mm;bottom:9mm}.branches{border-top:1px solid #d4d4d4;padding-top:7px;text-align:center}.branches .btitle{display:inline-block;background:#fff;padding:0 10px;transform:translateY(-18px);font-size:12px;font-weight:800;color:#4b4f55}.branch-list{margin-top:-12px;font-size:10px;font-weight:700;color:#555;line-height:1.5}.email{margin-top:7px;background:linear-gradient(90deg,#66A31A 0%,#66A31A 68%,#155A90 68%,#155A90 100%);color:#fff;text-align:center;padding:5px;font-size:10px}@media print{body{margin:0}.report{margin:0;width:210mm;height:297mm;page-break-after:always}@page{size:A4;margin:0}}
- </style></head><body><div class="report"><div class="top"><div class="brand-left"><div><img class="logo" src="${logoUrl}" onerror="this.style.display='none';document.getElementById('fallbackLogo').style.display='flex'"><img class="name" src="${nameUrl}" onerror="this.style.display='none'"><div id="fallbackLogo" style="display:none">${fallbackLogo}</div></div></div><div class="clinic"><div class="title">THERA CARE</div><div class="sub">Advance Physiotherapy & Sports Injury Clinic</div><div class="addr">Mekkunnu Road, Pallikuni 10 / 265,<br>265 Pallikuni (PO) 673313 (PIN)</div><div class="phone">Ph: 9744902555, 9061207871</div></div></div><div class="line"></div><div class="report-title">THERAPY REPORT</div><div class="patient-grid"><div class="field"><span class="label">Doctor's Name:</span><span class="value">${esc(d.therapist||'')}</span></div><div class="field"><span class="label">Date:</span><span class="value">${esc(window.formatIndianDate(d.date))}</span></div><div class="field"><span class="label">Patient Name:</span><span class="value">${esc(d.name)}</span></div><div class="field"><span class="label">Blood Pressure:</span><span class="value"></span></div><div class="field"><span class="label">Age / Sex:</span><span class="value">${esc(d.age||'')} ${d.gender?'/ '+esc(d.gender):''}</span></div><div class="field"><span class="label">Weight:</span><span class="value"></span></div></div><div class="watermark">+</div><div class="content"><div class="section"><h3>Diagnosis Report</h3><div class="box">${diagnosis}</div></div><div class="section"><h3>Therapy Details</h3><div class="therapy-grid"><div class="mini"><div class="ml">Duration of Therapy</div><div class="mv">${esc(d.duration||'--')}</div></div><div class="mini"><div class="ml">Sessions / Day</div><div class="mv">${esc(d.sessionsPerDay||'--')}</div></div><div class="mini"><div class="ml">Scheduled Time</div><div class="mv">${esc(d.time||'--')}</div></div></div></div>${d.previousDate||d.previousTime?`<div class="section"><h3>Previous Visit</h3><div class="box">Date: <strong>${esc(window.formatIndianDate(d.previousDate||''))}</strong> &nbsp;&nbsp;&nbsp; Time: <strong>${esc(d.previousTime||'--')}</strong></div></div>`:''}<div class="section"><h3>Payment Details</h3><table class="payment"><tr><th>Description</th><th>Details</th><th>Amount (₹)</th></tr><tr><td>Current Therapy Fee</td><td>${esc(d.paymentMode||'Cash')}</td><td>${money(fee)}</td></tr><tr><td>Previous Dues</td><td>Outstanding OP Balance</td><td>${money(prev)}</td></tr><tr><td>Advance Paid</td><td>${esc(d.paymentReference||'Payment Received')}</td><td>${money(advance)}</td></tr><tr><td class="balance">Net Balance Due</td><td>${esc(d.paymentRemarks||'')}</td><td class="balance">${money(net)}</td></tr></table></div><div class="signature"><div class="signature-box">Doctor / Therapist Signature</div></div></div><div class="footer"><div class="branches"><div class="btitle">OUR BRANCHES</div><div class="branch-list">${branches}</div></div><div class="email">Email: theracare55physio@gmail.com</div></div></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
- w.document.close();
+/* Requested invoice link: open the dedicated temp-invoice.html and pass the selected
+   appointment + company profile through same-origin sessionStorage. */
+window.printInvoice=async id=>{
+ const d=window.appointmentsDataCache[id];
+ if(!d)return alert('Appointment data not found.');
+ const w=window.open('about:blank','_blank');
+ if(!w)return alert('Please allow pop-ups to open the invoice.');
+ try{
+   const snap=await getDoc(doc(db,'settings','company'));
+   const company=snap.exists()?snap.data():{};
+   sessionStorage.setItem('bizodit.invoicePayload',JSON.stringify({
+     appointment:{...d,id,appointmentId:id,billDate:new Date().toISOString()},
+     company
+   }));
+   w.location.href='temp-invoice.html';
+ }catch(e){
+   console.error(e);
+   try{w.close()}catch(_){}
+   alert('Unable to open invoice. Check company profile / database permissions.');
+ }
+};
+
+/* ---------------- CSV SAMPLE / BULK APPOINTMENT IMPORT ---------------- */
+const CSV_HEADERS=[
+ 'mobile','name','age','gender','category','location','patientNotes',
+ 'branch','date','time','previousDate','previousTime','duration','sessionsPerDay',
+ 'therapist','status','fee','advance','prevDues','notes',
+ 'paymentMode','paymentReference','paymentRemarks'
+];
+
+function parseCSV(text){
+ const rows=[];let row=[],cell='',quoted=false;
+ text=String(text||'').replace(/^\uFEFF/,'');
+ for(let i=0;i<text.length;i++){
+   const ch=text[i];
+   if(quoted){
+     if(ch==='"'){
+       if(text[i+1]==='"'){cell+='"';i++}else quoted=false;
+     }else cell+=ch;
+   }else{
+     if(ch==='"') quoted=true;
+     else if(ch===','){row.push(cell);cell=''}
+     else if(ch==='\n'){
+       row.push(cell);rows.push(row);row=[];cell='';
+     }else if(ch!=='\r') cell+=ch;
+   }
+ }
+ if(cell!==''||row.length){row.push(cell);rows.push(row)}
+ return rows.filter(r=>r.some(v=>String(v||'').trim()!==''));
+}
+
+function normalizeCSVHeader(v){
+ return String(v||'').trim().replace(/^\uFEFF/,'').toLowerCase().replace(/[\s_\-\/]+/g,'');
+}
+
+function csvValue(obj,key){return String(obj[key]??'').trim()}
+
+window.downloadAppointmentSampleCSV=()=>{
+ const sample=[
+   CSV_HEADERS,
+   ['9744902555','Abdulla P.V.','63','Male','Normal','','Stroke patient','Mahe','2026-09-06','10:30','2026-09-05','10:00','30 minutes','2','Dr. Thejaswi M.K','Pending','1000','500','0','Continue physiotherapy','UPI','123456789012','']
+ ];
+ const csv=sample.map(r=>r.map(v=>{
+   const s=String(v??'');
+   return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+ }).join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='appointments-sample.csv';
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+
+function validISODate(v){return /^\d{4}-\d{2}-\d{2}$/.test(v)&&!isNaN(new Date(v+'T00:00:00').getTime())}
+function validTime(v){return /^\d{2}:\d{2}$/.test(v)&&Number(v.slice(0,2))<24&&Number(v.slice(3,5))<60}
+
+window.importAppointmentsCSV=async file=>{
+ const input=document.getElementById('aptCsvInput');
+ if(!file){if(input)input.value='';return}
+ if(!/\.csv$/i.test(file.name)){alert('Please select a CSV file.');if(input)input.value='';return}
+ try{
+   const text=await file.text();
+   const rows=parseCSV(text);
+   if(rows.length<2)throw new Error('CSV contains no appointment rows.');
+   const rawHeaders=rows[0];
+   const headerMap={};
+   rawHeaders.forEach((h,i)=>headerMap[normalizeCSVHeader(h)]=i);
+
+   const required=['mobile','name','branch','date','time','therapist'];
+   const missing=required.filter(h=>headerMap[normalizeCSVHeader(h)]===undefined);
+   if(missing.length)throw new Error('Missing required CSV columns: '+missing.join(', '));
+
+   const records=rows.slice(1).map((r,ri)=>{
+     const o={};
+     CSV_HEADERS.forEach(k=>{
+       const idx=headerMap[normalizeCSVHeader(k)];
+       o[k]=idx===undefined?'':String(r[idx]??'').trim();
+     });
+     o._row=ri+2;
+     return o;
+   });
+
+   const failures=[];
+   let imported=0;
+
+   for(const r of records){
+     try{
+       const mobile=r.mobile.replace(/\D/g,'');
+       if(!/^\d{10}$/.test(mobile))throw new Error('Mobile must be 10 digits.');
+       if(!r.name)throw new Error('Patient name is required.');
+       if(!r.branch)throw new Error('Branch is required.');
+       if(!r.date||!validISODate(r.date))throw new Error('Date must be YYYY-MM-DD.');
+       if(!r.time||!validTime(r.time))throw new Error('Time must be HH:MM.');
+       if(!r.therapist)throw new Error('Doctor / Therapist is required.');
+       if(!window.currentUser||window.currentUser.role!=='admin'){
+         if(r.branch!==window.currentUser.branch)throw new Error('Branch does not match your assigned branch.');
+       }
+       if(isPastDateTime(r.date,r.time))throw new Error('Cannot import an appointment in the past.');
+
+       const category=r.category||'Normal';
+       const status=r.status||'Pending';
+       const fee=parseFloat(r.fee)||0;
+       const advance=parseFloat(r.advance)||0;
+       const prevDues=parseFloat(r.prevDues)||0;
+       const balance=fee+prevDues-advance;
+
+       const payload={
+         mobile,name:r.name,age:r.age,gender:r.gender,category,
+         location:r.location,patientNotes:r.patientNotes,branch:r.branch,
+         date:r.date,time:r.time,previousDate:r.previousDate,previousTime:r.previousTime,
+         duration:r.duration,sessionsPerDay:r.sessionsPerDay,therapist:r.therapist,
+         status,fee,advance,balance,prevDues,notes:r.notes,
+         paymentMode:r.paymentMode||'Cash',
+         paymentReference:r.paymentReference,
+         paymentRemarks:r.paymentRemarks,
+         createdAt:new Date(),updatedAt:new Date()
+       };
+
+       let pq=query(collection(db,'patients'),where('mobile','==',mobile));
+       if(window.currentUser&&window.currentUser.role!=='admin'){
+         pq=query(collection(db,'patients'),where('mobile','==',mobile),where('branch','==',window.currentUser.branch));
+       }
+       const ps=await getDocs(pq);
+       const pdata={
+         mobile,name:r.name,age:r.age,gender:r.gender,category,
+         location:r.location,notes:r.patientNotes,branch:r.branch
+       };
+       if(ps.empty){
+         await addDoc(collection(db,'patients'),{
+           patientId:'P'+Math.floor(Math.random()*90000+10000),
+           ...pdata,createdAt:new Date()
+         });
+       }else{
+         await updateDoc(doc(db,'patients',ps.docs[0].id),pdata);
+       }
+
+       const n=await addDoc(collection(db,'appointments'),payload);
+       try{
+         await window.syncTransactions(n.id,payload);
+       }catch(txErr){
+         console.error('Transaction sync failed for imported row',r._row,txErr);
+       }
+       imported++;
+     }catch(e){
+       console.error('CSV row '+r._row,e);
+       failures.push('Row '+r._row+': '+(e.message||'Import failed'));
+     }
+   }
+
+   let msg=`CSV import complete.\n\nImported: ${imported}\nFailed: ${failures.length}`;
+   if(failures.length)msg+=`\n\n${failures.slice(0,15).join('\n')}${failures.length>15?'\n...':''}`;
+   alert(msg);
+   if(imported)await window.loadAppointments();
+ }catch(e){
+   console.error(e);
+   alert('CSV import failed: '+(e.message||'Invalid CSV file.'));
+ }finally{
+   if(input)input.value='';
+ }
 };
 
 window.exportAptPDF=()=>window.print();
