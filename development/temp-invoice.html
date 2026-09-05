@@ -377,10 +377,23 @@ window.renderInvoice=function(a={},c={}){
 };
 
 document.addEventListener('DOMContentLoaded',()=>{
-  renderInvoice({},{
+  const fallbackCompany={
     CompanyName:'STRA CARE',
     Tagline:'Physiotherapy & Healthcare Services'
-  });
+  };
+  const raw=sessionStorage.getItem('bizodit.invoicePayload');
+  if(raw){
+    try{
+      const payload=JSON.parse(raw);
+      renderInvoice(payload.appointment||{},payload.company||fallbackCompany);
+      sessionStorage.removeItem('bizodit.invoicePayload');
+      return;
+    }catch(e){
+      console.error('Invoice payload error:',e);
+      sessionStorage.removeItem('bizodit.invoicePayload');
+    }
+  }
+  renderInvoice({},fallbackCompany);
 });
 </script>
 </body>
