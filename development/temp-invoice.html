@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temporary Invoice | STRA CARE</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1769C2;
+  --blue-dark:#0B4F91;
+  --blue-soft:#EAF3FF;
+  --green:#0A8F68;
+  --green-dark:#067052;
+  --green-soft:#EAF8F3;
+  --ink:#172033;
+  --muted:#667085;
+  --line:#D9E2EC;
+  --paper:#fff;
+  --page:#F3F6FA;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--page);font-family:Inter,Arial,sans-serif;color:var(--ink)}
+body{padding:28px}
+.invoice-wrap{width:210mm;min-height:297mm;margin:auto;background:var(--paper);box-shadow:0 10px 35px rgba(15,23,42,.12);position:relative;overflow:hidden}
+.invoice{min-height:297mm;padding:16mm 17mm 14mm;position:relative}
+.top-accent{position:absolute;left:0;top:0;width:100%;height:6px;background:linear-gradient(90deg,var(--blue) 0 68%,var(--green) 68% 100%)}
+.header{display:flex;justify-content:space-between;gap:24px;padding-top:4px;padding-bottom:13px;border-bottom:2px solid var(--blue)}
+.brand{display:flex;align-items:center;gap:13px;min-width:0}
+.logo{width:72px;height:72px;object-fit:contain;border-radius:8px;display:none}
+.brand-text{min-width:0}
+.company-name{font-size:24px;font-weight:800;letter-spacing:-.6px;color:var(--blue-dark);line-height:1.1}
+.tagline{font-size:10px;color:var(--green);font-weight:700;margin-top:4px}
+.company-contact{text-align:right;font-size:9.5px;line-height:1.55;color:var(--muted);max-width:310px}
+.company-contact strong{color:var(--ink)}
+.invoice-title{margin-top:16px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+.invoice-title h1{margin:0;color:var(--blue-dark);font-size:25px;letter-spacing:1.5px}
+.invoice-title .type{font-size:10px;font-weight:700;color:var(--green);background:var(--green-soft);padding:6px 10px;border-radius:5px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-top:14px}
+.meta-box{border:1px solid var(--line);border-radius:7px;padding:9px 11px;background:#fff}
+.meta-label{font-size:8px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700}
+.meta-value{font-size:11px;font-weight:600;margin-top:4px;min-height:14px}
+.patient{margin-top:18px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.section-head{background:linear-gradient(90deg,var(--blue-soft),#fff);border-left:4px solid var(--blue);padding:8px 11px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--blue-dark)}
+.patient-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:0}
+.field{padding:9px 11px;border-right:1px solid var(--line);border-top:1px solid var(--line)}
+.field:nth-child(3n){border-right:0}
+.field-label{font-size:8px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.field-value{font-size:11px;font-weight:600;margin-top:3px;min-height:14px}
+.service{margin-top:18px}
+table{width:100%;border-collapse:collapse;font-size:10px}
+thead th{background:var(--blue-dark);color:#fff;padding:8px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.4px}
+thead th:last-child,td:last-child{text-align:right}
+tbody td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:1px solid var(--line)}
+.service-main{font-weight:700;color:var(--ink)}
+.service-sub{font-size:8.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+.amount{font-weight:700;white-space:nowrap}
+.summary{display:flex;justify-content:flex-end;margin-top:10px}
+.summary-box{width:270px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.sum-row{display:flex;justify-content:space-between;padding:7px 11px;font-size:10px;border-bottom:1px solid var(--line)}
+.sum-row:last-child{border-bottom:0}
+.sum-row.total{background:var(--blue-soft);font-weight:800;color:var(--blue-dark);font-size:12px}
+.sum-row.paid{color:var(--green-dark);font-weight:700;background:var(--green-soft)}
+.sum-row.balance{font-weight:800}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:17px}
+.info-box{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.info-title{padding:7px 10px;background:#F8FAFC;color:var(--blue-dark);font-size:9px;font-weight:800;text-transform:uppercase}
+.info-body{padding:9px 10px;font-size:9.5px;line-height:1.55;color:#475467;min-height:58px}
+.amount-words{margin-top:13px;padding:9px 11px;border-left:4px solid var(--green);background:var(--green-soft);font-size:9.5px}
+.amount-words strong{color:var(--green-dark)}
+.signature{margin-top:25px;display:flex;justify-content:flex-end}
+.sign-box{width:220px;text-align:center}
+.signature-space{height:43px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.sign-name{font-size:10px;font-weight:800}
+.sign-qual{font-size:8.5px;color:var(--muted);line-height:1.45}
+.footer{margin-top:20px;padding-top:9px;border-top:2px solid var(--green);display:flex;justify-content:space-between;gap:20px;font-size:8px;color:var(--muted);line-height:1.5}
+.footer-right{text-align:right}
+.watermark{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:125mm;max-width:70%;opacity:.035;pointer-events:none;display:none}
+.actions{width:210mm;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}
+.btn{border:0;border-radius:7px;padding:10px 15px;font:600 12px Inter;cursor:pointer}
+.btn-print{background:var(--blue);color:white}
+.btn-close{background:white;color:var(--ink);border:1px solid var(--line)}
+
+.editable{outline:none;border-bottom:1px dashed transparent}
+.editable:hover,.editable:focus{border-bottom-color:var(--blue)}
+
+@media(max-width:850px){
+ body{padding:0;background:#fff}
+ .actions{width:100%;padding:10px;position:sticky;top:0;background:#fff;z-index:5;border-bottom:1px solid var(--line)}
+ .invoice-wrap{width:100%;min-height:auto;box-shadow:none}
+ .invoice{min-height:auto;padding:9mm 7mm}
+ .header{flex-direction:column}
+ .company-contact{text-align:left;max-width:none}
+ .meta,.patient-grid,.info-grid{grid-template-columns:1fr}
+ .field{border-right:0!important}
+ .summary-box{width:100%}
+ .invoice-title{align-items:flex-start;flex-direction:column}
+ .footer{flex-direction:column}.footer-right{text-align:left}
+}
+
+@page{size:A4;margin:0}
+@media print{
+ body{padding:0;background:#fff}
+ .actions{display:none!important}
+ .invoice-wrap{width:210mm;min-height:297mm;box-shadow:none}
+ .invoice{min-height:297mm}
+ *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
+</head>
+<body>
+
+<div class="actions">
+  <button class="btn btn-close" onclick="window.close()">Close</button>
+  <button class="btn btn-print" onclick="window.print()">Print Invoice</button>
+</div>
+
+<div class="invoice-wrap">
+<div class="invoice" id="invoice">
+  <div class="top-accent"></div>
+  <img id="watermark" class="watermark" alt="">
+
+  <header class="header">
+    <div class="brand">
+      <img id="companyLogo" class="logo" alt="Company Logo">
+      <div class="brand-text">
+        <div id="companyName" class="company-name editable">STRA CARE</div>
+        <div id="companyTagline" class="tagline editable">Physiotherapy & Healthcare Services</div>
+      </div>
+    </div>
+    <div id="companyContact" class="company-contact">
+      <div><strong>Address:</strong> <span data-company="address">—</span></div>
+      <div><strong>Web:</strong> <span data-company="website">—</span> &nbsp; <strong>Email:</strong> <span data-company="email">—</span></div>
+      <div><strong>Ph:</strong> <span data-company="phone">—</span></div>
+      <div><strong>GSTIN:</strong> <span data-company="gstin">—</span></div>
+    </div>
+  </header>
+
+  <div class="invoice-title">
+    <h1>INVOICE</h1>
+    <div class="type">PHYSIOTHERAPY / THERAPY SERVICES</div>
+  </div>
+
+  <div class="meta">
+    <div class="meta-box"><div class="meta-label">Bill No.</div><div id="billNo" class="meta-value editable">INV-000001</div></div>
+    <div class="meta-box"><div class="meta-label">Bill Date</div><div id="billDate" class="meta-value editable">05 Sep 2026</div></div>
+    <div class="meta-box"><div class="meta-label">Appointment ID</div><div id="appointmentId" class="meta-value editable">APT-000001</div></div>
+    <div class="meta-box"><div class="meta-label">Appointment Date / Time</div><div id="appointmentDate" class="meta-value editable">—</div></div>
+  </div>
+
+  <section class="patient">
+    <div class="section-head">Patient Details</div>
+    <div class="patient-grid">
+      <div class="field"><div class="field-label">Patient Name</div><div id="patientName" class="field-value editable">—</div></div>
+      <div class="field"><div class="field-label">Age</div><div id="patientAge" class="field-value editable">—</div></div>
+      <div class="field"><div class="field-label">Gender</div><div id="patientGender" class="field-value editable">—</div></div>
+      <div class="field"><div class="field-label">Mobile</div><div id="patientMobile" class="field-value editable">—</div></div>
+      <div class="field"><div class="field-label">Branch</div><div id="branch" class="field-value editable">—</div></div>
+      <div class="field"><div class="field-label">Previous Visit</div><div id="previousVisit" class="field-value editable">—</div></div>
+    </div>
+  </section>
+
+  <section class="service">
+    <div class="section-head">Service / Treatment</div>
+    <table>
+      <thead><tr><th style="width:55%">Description</th><th style="width:15%">Qty</th><th style="width:30%">Amount</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>
+            <div id="serviceName" class="service-main editable">Physiotherapy / Therapy Session</div>
+            <div id="diagnosis" class="service-sub editable">Diagnosis: —</div>
+            <div id="duration" class="service-sub editable">Treatment duration: —</div>
+            <div id="sessionsPerDay" class="service-sub editable">Sessions / day: —</div>
+          </td>
+          <td id="quantity" class="editable">1</td>
+          <td id="fee" class="amount editable">₹0.00</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="summary">
+    <div class="summary-box">
+      <div class="sum-row"><span>Service Fee</span><span id="subtotal">₹0.00</span></div>
+      <div class="sum-row"><span>Discount</span><span id="discount">₹0.00</span></div>
+      <div class="sum-row total"><span>Total</span><span id="total">₹0.00</span></div>
+      <div class="sum-row paid"><span>Amount Paid</span><span id="paid">₹0.00</span></div>
+      <div class="sum-row balance"><span>Balance Due</span><span id="balance">₹0.00</span></div>
+    </div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <div class="info-title">Payment Details</div>
+      <div class="info-body">
+        <div><strong>Mode:</strong> <span id="paymentMode">—</span></div>
+        <div><strong>Reference / UTR:</strong> <span id="paymentRef">—</span></div>
+      </div>
+    </div>
+    <div class="info-box">
+      <div class="info-title">Bank / UPI</div>
+      <div id="bankDetails" class="info-body">Payment details are available from the Company Profile.</div>
+    </div>
+  </div>
+
+  <div class="amount-words"><strong>Amount in words:</strong> <span id="amountWords">Zero Rupees Only</span></div>
+
+  <div class="info-box" style="margin-top:13px">
+    <div class="info-title">Notes / Clinical Reference</div>
+    <div id="notes" class="info-body">This invoice is issued for the above physiotherapy / therapy services. Clinical details shown here are for reference only.</div>
+  </div>
+
+  <div class="signature">
+    <div class="sign-box">
+      <div class="signature-space"></div>
+      <div id="doctorName" class="sign-name">Dr. THEJASWI M.K (PT)</div>
+      <div id="doctorQual" class="sign-qual">BPT, MPT (Ortho)<br>MIAP Reg No. L.43616<br>Physiotherapist / CEO, STRA CARE</div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div id="footerLeft">Thank you for choosing our services.</div>
+    <div class="footer-right">
+      <div><strong>Authorized Signatory</strong></div>
+      <div id="authorizedSignatory">—</div>
+    </div>
+  </footer>
+</div>
+</div>
+
+<script>
+/*
+  TEMP INVOICE TEMPLATE
+  ----------------------------------------------------------
+  appointments.html can open this file and call:
+
+    win.renderInvoice({
+      appointmentId, billNo, billDate, appointmentDate,
+      patientName, age, gender, mobile, branch, previousVisit,
+      serviceName, diagnosis, duration, sessionsPerDay,
+      quantity, fee, discount, paid, balance,
+      paymentMode, paymentRef, notes,
+      doctorName, doctorQual
+    }, companyData);
+
+  companyData follows company-module.html:
+    CompanyName, Tagline, Address, City, State, Pincode,
+    MobileNo, Email, Website, GSTIN, Pan, CIN,
+    BankName, AccountNo, IFSC, Branch, UPIID, UPINo, LogoURL
+*/
+
+const INR = n => '₹' + Number(n || 0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function setText(id,value){
+  const el=document.getElementById(id);
+  if(el) el.textContent=(value===undefined || value===null || value==='')?'—':value;
+}
+
+function money(n){ return INR(Number(n)||0); }
+
+function numberToWordsIndian(num){
+  num=Math.round(Number(num)||0);
+  if(num===0) return 'Zero Rupees Only';
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function two(n){if(n<20)return ones[n];return tens[Math.floor(n/10)]+(n%10?' '+ones[n%10]:'');}
+  function three(n){return n<100?two(n):ones[Math.floor(n/100)]+' Hundred'+(n%100?' '+two(n%100):'');}
+  let out='';
+  const crore=Math.floor(num/10000000); num%=10000000;
+  const lakh=Math.floor(num/100000); num%=100000;
+  const thousand=Math.floor(num/1000); num%=1000;
+  const hundred=num;
+  if(crore) out+=three(crore)+' Crore ';
+  if(lakh) out+=three(lakh)+' Lakh ';
+  if(thousand) out+=three(thousand)+' Thousand ';
+  if(hundred) out+=three(hundred);
+  return out.trim()+' Rupees Only';
+}
+
+function safeAddress(c){
+  return [c.Address,c.City,c.State,c.Pincode].filter(Boolean).join(', ');
+}
+
+function applyCompany(c={}){
+  const name=c.CompanyName || 'STRA CARE';
+  setText('companyName',name);
+  setText('companyTagline',c.Tagline || 'Physiotherapy & Healthcare Services');
+
+  const logo=document.getElementById('companyLogo');
+  if(c.LogoURL){
+    logo.src=c.LogoURL; logo.style.display='block';
+    document.getElementById('watermark').src=c.LogoURL;
+    document.getElementById('watermark').style.display='block';
+  }
+
+  const map={
+    address:safeAddress(c)||'—',
+    website:c.Website||'—',
+    email:c.Email||'—',
+    phone:c.MobileNo||'—',
+    gstin:c.GSTIN||'—'
+  };
+  Object.keys(map).forEach(k=>{
+    const el=document.querySelector('[data-company="'+k+'"]');
+    if(el) el.textContent=map[k];
+  });
+
+  const bank=[
+    c.BankName ? 'Bank: '+c.BankName : '',
+    c.AccountNo ? 'A/c No: '+c.AccountNo : '',
+    c.IFSC ? 'IFSC: '+c.IFSC : '',
+    c.Branch ? 'Branch: '+c.Branch : '',
+    c.UPIID ? 'UPI ID: '+c.UPIID : '',
+    c.UPINo ? 'UPI No: '+c.UPINo : ''
+  ].filter(Boolean);
+  document.getElementById('bankDetails').innerHTML=bank.length?bank.join('<br>'):'Payment details are available from the Company Profile.';
+  setText('authorizedSignatory',c.AuthorizedSignatory||'—');
+}
+
+function formatDate(value){
+  if(!value) return '—';
+  let d=value;
+  if(value && typeof value.toDate==='function') d=value.toDate();
+  else if(!(value instanceof Date)) d=new Date(value);
+  if(isNaN(d)) return String(value);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+function formatDateTime(value){
+  if(!value) return '—';
+  let d=value;
+  if(value && typeof value.toDate==='function') d=value.toDate();
+  else if(!(value instanceof Date)) d=new Date(value);
+  if(isNaN(d)) return String(value);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+window.renderInvoice=function(a={},c={}){
+  applyCompany(c);
+
+  setText('billNo',a.billNo||a.invoiceNo||'INV-'+String(Date.now()).slice(-6));
+  setText('billDate',formatDate(a.billDate||new Date()));
+  setText('appointmentId',a.appointmentId||a.id||'—');
+  setText('appointmentDate',formatDateTime(a.appointmentDate||a.dateTime||a.date));
+
+  setText('patientName',a.patientName||a.name);
+  setText('patientAge',a.age ? String(a.age)+' years' : '—');
+  setText('patientGender',a.gender);
+  setText('patientMobile',a.mobile||a.mobileNo||a.phone);
+  setText('branch',a.branch||a.branchName);
+  setText('previousVisit',formatDate(a.previousVisit));
+
+  setText('serviceName',a.serviceName||a.service||'Physiotherapy / Therapy Session');
+  setText('diagnosis','Diagnosis: '+(a.diagnosis||'—'));
+  setText('duration','Treatment duration: '+(a.duration||'—'));
+  setText('sessionsPerDay','Sessions / day: '+(a.sessionsPerDay||'—'));
+  setText('quantity',a.quantity||1);
+
+  const fee=Number(a.fee||a.totalFee||0);
+  const discount=Number(a.discount||0);
+  const total=Math.max(0,fee-discount);
+  const paid=Number(a.paid||a.advance||a.amountPaid||0);
+  const balance=(a.balance!==undefined && a.balance!==null)?Number(a.balance):Math.max(0,total-paid);
+
+  setText('fee',money(fee));
+  setText('subtotal',money(fee));
+  setText('discount',money(discount));
+  setText('total',money(total));
+  setText('paid',money(paid));
+  setText('balance',money(balance));
+  setText('amountWords',numberToWordsIndian(total));
+
+  setText('paymentMode',a.paymentMode||a.mode);
+  setText('paymentRef',a.paymentRef||a.reference||a.utr);
+  setText('notes',a.notes||a.clinicalNotes||'This invoice is issued for the above physiotherapy / therapy services. Clinical details shown here are for reference only.');
+
+  setText('doctorName',a.doctorName||a.therapist||'Dr. THEJASWI M.K (PT)');
+  setText('doctorQual',a.doctorQual||'BPT, MPT (Ortho)\\nMIAP Reg No. L.43616\\nPhysiotherapist / CEO, STRA CARE');
+  document.getElementById('doctorQual').innerHTML=(a.doctorQual||'BPT, MPT (Ortho)\\nMIAP Reg No. L.43616\\nPhysiotherapist / CEO, STRA CARE').replace(/\\n/g,'<br>');
+};
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderInvoice({},{
+    CompanyName:'STRA CARE',
+    Tagline:'Physiotherapy & Healthcare Services'
+  });
+});
+</script>
+</body>
+</html>
