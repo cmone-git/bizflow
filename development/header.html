@@ -1,180 +1,190 @@
 <style>
-  /* --- Progress Clock Header Styles --- */
-  .metric-round { position: relative; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; }
-  .clock-svg { transform: rotate(-90deg); position: absolute; }
-  .clock-svg circle { fill: none; stroke-width: 4; stroke-linecap: round; }
-  .bg-track { stroke: #F0F0F0; }
-  .progress-arc { transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-  .center-text { display: flex; flex-direction: column; align-items: center; z-index: 1; text-align: center; line-height: 1; }
-  .main-val { font-size: 13px; font-weight: 700; color: #0a0a0a; margin-bottom: 2px; }
-  .sub-label { font-size: 7px; font-weight: 700; color: #777777; text-transform: uppercase; }
+    /* =========================================================
+       PROGRESS CLOCK HEADER
+       ========================================================= */
 
-  .blue-pair .progress-arc { stroke: #2563EB; }
-  .yellow-pair .progress-arc { stroke: #FFC72C; }
-
-  /* Logout Button */
-  .logout-btn { margin-left: 12px; padding: 6px 12px; background: #FEF2F2; color: #EF4444; border: 1px solid #FCA5A5; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-  .logout-btn:hover { background: #EF4444; color: #FFFFFF; }
-
-  /* Bell Animation */
-  @keyframes ring {
-      0% { transform: rotate(0); }
-      10% { transform: rotate(15deg); }
-      20% { transform: rotate(-10deg); }
-      30% { transform: rotate(5deg); }
-      40% { transform: rotate(-5deg); }
-      50% { transform: rotate(0); }
-      100% { transform: rotate(0); }
-  }
-  .bell-anim { animation: ring 2s infinite; transform-origin: top center; color: #0062FF !important; }
-
-  /* --- Mobile Responsiveness --- */
-  .mobile-brand { display: none; font-weight: 800; color: #0062FF; font-size: 18px; margin-left: 12px; white-space: nowrap; }
-
-  @media (max-width: 768px) {
-      .desktop-only { display: none !important; }
-      .search-container { width: auto !important; background: transparent !important; border: none !important; padding: 0 !important; }
-      .search-input { display: none !important; }
-      .top-header { padding: 12px 16px !important; }
-      .logout-btn { padding: 4px 8px; font-size: 11px; }
-      .mobile-brand { display: block; } /* Show sticky company name on mobile */
-  }
-</style>
-
-<header class="top-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #E8E5E1; position: sticky; top: 0; z-index: 100;">
-    
-    <div style="display: flex; align-items: center; gap: 16px;">
-        <button class="icon-action toggle-sidebar" onclick="window.toggleMenu()" style="background: none; border: none; color: #0a0a0a; cursor: pointer; display: none;">
-            <span class="material-symbols-rounded" style="font-size: 28px;">menu</span>
-        </button>
-
-            <div class="coral-pair metric-round desktop-only">
-                <svg width="50" height="50" class="clock-svg" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="21" class="bg-track"></circle>
-                    <circle cx="25" cy="25" r="21" class="progress-arc" id="dd-arc" stroke-dasharray="131.95" stroke-dashoffset="131.95"></circle>
-                </svg>
-                <div class="center-text">
-                    <span class="main-val" id="dd-val">--</span>
-                    <span class="sub-label" id="dd-context">DD</span>
-                </div>
-            </div>
-            <div class="coral-pair metric-round desktop-only">
-                <svg width="50" height="50" class="clock-svg" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="21" class="bg-track"></circle>
-                    <circle cx="25" cy="25" r="21" class="progress-arc" id="mm-arc" stroke-dasharray="131.95" stroke-dashoffset="131.95"></circle>
-                </svg>
-                <div class="center-text">
-                    <span class="main-val" id="mm-val">--</span>
-                    <span class="sub-label" id="mm-context">MM</span>
-                </div>
-            </div>
-            <div class="yellow-pair metric-round">
-                <svg width="50" height="50" class="clock-svg" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="21" class="bg-track"></circle>
-                    <circle cx="25" cy="25" r="21" class="progress-arc" id="hh-arc" stroke-dasharray="131.95" stroke-dashoffset="131.95"></circle>
-                </svg>
-                <div class="center-text">
-                    <span class="main-val" id="hh-val">--</span>
-                    <span class="sub-label" id="hh-context">HH</span>
-                </div>
-            </div>
-            <div class="yellow-pair metric-round">
-                <svg width="50" height="50" class="clock-svg" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="21" class="bg-track"></circle>
-                    <circle cx="25" cy="25" r="21" class="progress-arc" id="min-arc" stroke-dasharray="131.95" stroke-dashoffset="131.95"></circle>
-                </svg>
-                <div class="center-text">
-                    <span class="main-val" id="min-val">--</span>
-                    <span class="sub-label">MIN</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="header-actions" style="display: flex; align-items: center; gap: 12px; margin-left: auto;">
-        
-        <!-- Search Input -->
-        <div class="search-container desktop-only" style="width: 192px; background: #FAFAFA; border: 1px solid #E8E5E1; border-radius: 8px; display: flex; align-items: center; padding: 8px 12px;">
-            <span class="material-symbols-rounded" style="font-size: 20px; color: #777777;">search</span>
-            <input type="text" class="search-input" id="module-search" placeholder="Search modules..." style="border: none; background: transparent; outline: none; width: 100%; font-size: 13px; margin-left: 8px; color: #0a0a0a;">
-        </div>
-
-        <!-- Notification Bell -->
-        <div class="notification-wrapper" onclick="openUpdates()" style="position: relative; cursor: pointer; display: flex; align-items: center;">
-            <span class="material-symbols-rounded bell-icon" id="bell-icon" style="color: #777777; font-size: 24px;">notifications</span>
-            <span id="notif-badge" style="position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: #e16349; border-radius: 50%; border: 2px solid #FFF;"></span>
-        </div>
-
-        <div class="profile-menu" style="display: flex; align-items: center; padding-left: 12px; border-left: 1px solid #E8E5E1;">
-            <div id="header-profile-icon" style="width: 34px; height: 34px; background: #fef5e8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e16349; font-weight: 700; font-size: 14px;">A</div>
-            <button class="logout-btn" onclick="window.handleLogout()">Logout</button>
-        </div>
-    </div>
-</header>
-
-<script>
-    // 1. Profile Icon Setup
-    (function() {
-        if (window.currentUser) {
-            const profileIcon = document.getElementById('header-profile-icon');
-            if (window.currentUser.role === 'admin') {
-                profileIcon.innerText = 'A';
-            } else {
-                let branchNumber = window.currentUser.branch.replace('Branch ', '');
-                profileIcon.innerText = branchNumber.charAt(0); 
-            }
-        }
-    })();
-
-    if (!window.handleLogout) {
-        window.handleLogout = function() {
-            window.currentUser = null;
-            document.getElementById('app-container').style.display = 'none';
-            document.getElementById('login-container').style.display = 'flex';
-            document.getElementById('loginPassword').value = '';
-        };
+    .metric-round {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
-    // 2. Bell Animation & Updates Logic
-    function openUpdates() {
-        // Stop animation & hide badge
-        document.getElementById('notif-badge').style.display = 'none';
-        document.getElementById('bell-icon').classList.remove('bell-anim');
-        
-        // Save state in local storage so it doesn't animate on refresh
-        localStorage.setItem('updatesViewed', 'true');
-        
-        // Open updates module
-        if(window.switchView) window.switchView('view-updates', null);
+    .clock-svg {
+        transform: rotate(-90deg);
+        position: absolute;
     }
 
-    // Check local storage on load to see if we should animate
-    if(localStorage.getItem('updatesViewed') !== 'true') {
-        document.getElementById('bell-icon').classList.add('bell-anim');
-    } else {
-        document.getElementById('notif-badge').style.display = 'none';
+    .clock-svg circle {
+        fill: none;
+        stroke-width: 4;
+        stroke-linecap: round;
     }
 
-    // 3. Search Module Logic
-    document.getElementById('module-search').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        // Select all sidebar navigation buttons
-        const navLinks = document.querySelectorAll('#sidebar-nav .nav-link');
-        
-        navLinks.forEach(link => {
-            const moduleName = link.innerText.toLowerCase();
-            // Show/hide based on match
-            if(moduleName.includes(searchTerm)) {
-                link.style.display = ''; 
-            } else {
-                link.style.display = 'none';
-            }
-        });
-        
-        // If on mobile and user starts typing, automatically open the sidebar to show results
-        const sidebar = document.getElementById('sidebar-container');
-        if (searchTerm.length > 0 && window.innerWidth <= 768 && !sidebar.classList.contains('open')) {
-            if(window.toggleMenu) window.toggleMenu();
-        }
-    });
-</script>
+    .bg-track {
+        stroke: #F0F0F0;
+    }
+
+    .progress-arc {
+        transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .center-text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 1;
+        text-align: center;
+        line-height: 1;
+    }
+
+    .main-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0a0a0a;
+        margin-bottom: 2px;
+    }
+
+    .sub-label {
+        font-size: 7px;
+        font-weight: 700;
+        color: #777777;
+        text-transform: uppercase;
+    }
+
+    .blue-pair .progress-arc {
+        stroke: #2563EB;
+    }
+
+    .yellow-pair .progress-arc {
+        stroke: #FFC72C;
+    }
+
+    /* =========================================================
+       LOGOUT
+       ========================================================= */
+
+    .logout-btn {
+        margin-left: 12px;
+        padding: 6px 12px;
+        background: #FEF2F2;
+        color: #EF4444;
+        border: 1px solid #FCA5A5;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .logout-btn:hover {
+        background: #EF4444;
+        color: #FFFFFF;
+    }
+
+    /* =========================================================
+       NOTIFICATION
+       ========================================================= */
+
+    @keyframes ring {
+        0% { transform: rotate(0); }
+        10% { transform: rotate(15deg); }
+        20% { transform: rotate(-10deg); }
+        30% { transform: rotate(5deg); }
+        40% { transform: rotate(-5deg); }
+        50% { transform: rotate(0); }
+        100% { transform: rotate(0); }
+    }
+
+    .bell-anim {
+        animation: ring 2s infinite;
+        transform-origin: top center;
+        color: #0062FF !important;
+    }
+
+    /* =========================================================
+       MOBILE SEARCH
+       ========================================================= */
+
+    .mobile-search-btn {
+        display: none;
+        width: 38px;
+        height: 38px;
+        border: 1px solid #E8E5E1;
+        background: #FAFAFA;
+        border-radius: 8px;
+        align-items: center;
+        justify-content: center;
+        color: #0F172A;
+        cursor: pointer;
+    }
+
+    .mobile-search-btn .material-symbols-rounded {
+        font-size: 21px;
+    }
+
+    .mobile-search-panel {
+        display: none;
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: calc(100% + 6px);
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 8px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.10);
+        z-index: 9999;
+    }
+
+    .mobile-search-panel.open {
+        display: flex;
+    }
+
+    .mobile-search-inner {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 9px 11px;
+    }
+
+    .mobile-search-inner .material-symbols-rounded {
+        font-size: 20px;
+        color: #64748B;
+    }
+
+    .mobile-search-input {
+        width: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: #0F172A;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .mobile-search-input::placeholder {
+        color: #94A3B8;
+    }
+
+    /* =========================================================
+       DESKTOP SEARCH
+       ========================================================= */
+
+    .search-container {
+        width: 192px;
+        background: #FAFAFA;
+        border: 1px solid #E8E5E1;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+    }
+
+    .
