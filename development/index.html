@@ -543,7 +543,7 @@ html,body{
                         </h4>
 
                         <button style="background:var(--surface);border:1px solid var(--border);padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-main);display:flex;align-items:center;gap:6px"
-                                onclick="window.switchView('view-appointments',null)">
+                                onclick="window.switchView('view-sales',null)">
                             View Full Module
                             <span class="material-symbols-rounded" style="font-size:16px">arrow_forward</span>
                         </button>
@@ -554,8 +554,8 @@ html,body{
                             <thead>
                                 <tr>
                                     <th>Time</th>
-                                    <th>Patient Details</th>
-                                    <th>Branch & Therapist</th>
+                                    <th>client Details</th>
+                                    <th>Branch & Management</th>
                                     <th>Financial Status</th>
                                     <th>Status</th>
                                 </tr>
@@ -574,11 +574,11 @@ html,body{
             </div>
 
             <!-- Dynamically loaded application modules -->
-            <div id="view-patients" class="view-section"></div>
-            <div id="view-appointments" class="view-section"></div>
+            <div id="view-clients" class="view-section"></div>
+            <div id="view-sales" class="view-section"></div>
             <div id="view-transaction" class="view-section"></div>
             <div id="view-branches" class="view-section"></div>
-            <div id="view-therapist" class="view-section"></div>
+            <div id="view-management" class="view-section"></div>
             <div id="view-calender" class="view-section"></div>
             <div id="view-staff" class="view-section"></div>
             <div id="view-attendance" class="view-section"></div>
@@ -660,11 +660,11 @@ window.selectedDateStr = window.getLocalDateString();
    MODULE MAP
 ------------------------------------------------------- */
 window.cmAppFileMap = {
-    "view-patients": "patients.html",
-    "view-appointments": "appointments.html",
+    "view-clients": "clients.html",
+    "view-sales": "sales.html",
     "view-transaction": "transaction.html",
     "view-branches": "branches.html",
-    "view-therapist": "therapist.html",
+    "view-management": "management.html",
     "view-calender": "calender.html",
     "view-staff": "staff.html",
     "view-attendance": "attendance.html",
@@ -927,7 +927,7 @@ function dragElement(elmnt) {
 /* -------------------------------------------------------
    DYNAMIC MODULE LOADER
    IMPORTANT FIX:
-   - always fetches the current appointments.html
+   - always fetches the current sales.html
    - adds a timestamp cache buster
    - keeps relative imports working from /development/
 ------------------------------------------------------- */
@@ -1300,7 +1300,7 @@ window.renderLiveTable = function() {
             <tr>
                 <td colspan="5"
                     style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;display:block;width:100%">
-                    No appointments scheduled for this date.
+                    No sales generated for this date.
                 </td>
             </tr>
         `;
@@ -1349,7 +1349,7 @@ window.renderLiveTable = function() {
                         ${data.branch || ''}
                     </strong>
                     <span style="font-size:12px;color:var(--text-muted);font-weight:600">
-                        Dr. ${data.therapist || 'N/A'}
+                        Dr. ${data.management || 'N/A'}
                     </span>
                 </td>
 
@@ -1468,17 +1468,17 @@ window.fetchDashboardData = async function() {
         }
 
         /* -----------------------------------------------
-           APPOINTMENTS
+           SALES
         ------------------------------------------------ */
         let qApt;
 
         if (window.currentUser.role === 'admin') {
             qApt =
-                query(collection(db, "appointments"));
+                query(collection(db, "sales"));
         } else {
             qApt =
                 query(
-                    collection(db, "appointments"),
+                    collection(db, "sales"),
                     where(
                         "branch",
                         "==",
@@ -1670,8 +1670,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /*
        Load shared components with cache-busting.
-       These do NOT render the appointment module.
-       appointments.html is loaded only by switchView().
+       These do NOT render the sales module.
+       sales.html is loaded only by switchView().
     */
     window.loadComponent(
         'header-container',
